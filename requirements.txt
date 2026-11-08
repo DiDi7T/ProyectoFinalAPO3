@@ -1,0 +1,24 @@
+# Visualización y Exploración (EDA)
+numpy
+pandas
+matplotlib
+seaborn
+pillow
+
+# Procesamiento de Imágenes y Visión por Computadora
+opencv-python
+
+# Modelos de Machine Learning Tradicionales (KNN, SVM, Random Forest, XGBoost)
+scikit-learn
+xgboost
+
+# Redes Neuronales y Deep Learning (CNN)
+torch
+torchvision
+
+# Interfaz Gráfica de Despliegue (GUI)
+streamlit
+
+# Pruebas y Utilidades
+pytest
+jupyter
