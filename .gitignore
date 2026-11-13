@@ -1,0 +1,27 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Python / Pycache
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Datasets y archivos pesados de datos (¡No subir imágeness a git!)
+data_raw/
+data_processed/
+*.zip
+*.tar.gz
+
+# Modelos guardados y logs
+experiments/checkpoints/*
+!experiments/checkpoints/.gitkeep
+experiments/logs/*
+!experiments/logs/.gitkeep
+
+# IDEs y editores
+.vscode/
+.idea/
+.DS_Store
