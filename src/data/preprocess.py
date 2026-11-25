@@ -210,3 +210,498 @@ def prepare_cnn_split(
         np.array(y_qual_list, dtype=np.int64),
         np.array(y_size_list, dtype=np.int64),
     )
+
+
+# ============================================================
+# INTEGRACIÓN DE IMÁGENES SEGMENTADAS CON REMBG
+# ============================================================
+
+def load_rembg_recolectado_df() -> pd.DataFrame:
+    """
+    Relaciona las etiquetas originales con las imágenes
+    procesadas mediante rembg.
+
+    Conserva las etiquetas de calidad y tamaño existentes.
+    Solo incluye máscaras generadas correctamente.
+    """
+
+    # Cargar las etiquetas del proyecto.
+    df = load_labels_df()
+
+    # Trabajar únicamente con fotografías recolectadas.
+    df = df[df["source"] == "recolectado"].copy()
+
+    # Archivo generado por segmentation_rembg.py.
+    ruta_manifest = (
+        PROJECT_ROOT
+        / "data_processed"
+        / "rembg_recolectado_manifest.csv"
+    )
+
+    if not ruta_manifest.is_file():
+        raise FileNotFoundError(
+            "Todavía no existe el manifiesto de rembg. "
+            "Debe generarse al ejecutar la segmentación."
+        )
+
+    manifest = pd.read_csv(ruta_manifest)
+
+    # Seleccionar segmentaciones técnicamente válidas.
+    manifest = manifest[
+        manifest["status"] == "generada"
+    ].copy()
+
+    columnas = [
+        "filepath",
+        "mask_filepath",
+        "isolated_filepath",
+        "cnn_filepath"
+    ]
+
+    # Relacionar cada fotografía con sus salidas.
+    df = df.merge(
+        manifest[columnas],
+        on="filepath",
+        how="inner",
+        validate="one_to_one"
+    )
+
+    # Verificar que las rutas procesadas existan.
+    for columna in columnas[1:]:
+        df = df[
+            df[columna].apply(
+                lambda ruta: (
+                    PROJECT_ROOT / ruta
+                ).is_file()
+            )
+        ].copy()
+
+    return df.reset_index(drop=True)
+
+
+# ============================================================
+# PREPARACIÓN DE DATOS UTILIZANDO SEGMENTACIÓN REMBG
+# ============================================================
+
+def _leer_par_rembg(row):
+    """
+    Carga la fruta aislada y su máscara binaria
+    sin ejecutar nuevamente el modelo rembg.
+    """
+
+    ruta_imagen = (
+        PROJECT_ROOT / str(row["isolated_filepath"])
+    )
+
+    ruta_mascara = (
+        PROJECT_ROOT / str(row["mask_filepath"])
+    )
+
+    imagen = cv2.imread(
+        str(ruta_imagen),
+        cv2.IMREAD_COLOR
+    )
+
+    mascara = cv2.imread(
+        str(ruta_mascara),
+        cv2.IMREAD_GRAYSCALE
+    )
+
+    if imagen is None or mascara is None:
+        raise FileNotFoundError(
+            f"Faltan resultados de rembg: "
+            f"{ruta_imagen} o {ruta_mascara}"
+        )
+
+    if imagen.shape[:2] != mascara.shape:
+        raise ValueError(
+            "La máscara y la imagen tienen "
+            "dimensiones diferentes."
+        )
+
+    if not np.any(mascara > 0):
+        raise ValueError(
+            f"La máscara está vacía: {ruta_mascara}"
+        )
+
+    return imagen, mascara
+
+
+# ============================================================
+# 1. CARACTERÍSTICAS PARA MACHINE LEARNING
+# ============================================================
+
+def extract_ml_features_rembg(
+    image_bgr: np.ndarray,
+    mask: np.ndarray,
+    bins: tuple[int, int, int] = (16, 8, 8)
+) -> np.ndarray:
+    """
+    Calcula características a partir de una fruta segmentada.
+
+    - Histograma HSV: 16 x 8 x 8 = 1024 valores.
+    - Geometría: diámetro, relación de aspecto,
+      extensión y solidez.
+
+    Total: 1028 características.
+    """
+
+    if (
+        image_bgr.ndim != 3
+        or image_bgr.shape[2] != 3
+        or mask.shape != image_bgr.shape[:2]
+    ):
+        raise ValueError(
+            "La imagen BGR y la máscara no coinciden."
+        )
+
+    mascara = np.where(
+        mask > 0, 255, 0
+    ).astype(np.uint8)
+
+    contornos, _ = cv2.findContours(
+        mascara,
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE
+    )
+
+    if not contornos:
+        raise ValueError(
+            "La máscara no contiene objetos."
+        )
+
+    contorno = max(
+        contornos,
+        key=cv2.contourArea
+    )
+
+    area = cv2.contourArea(contorno)
+
+    if area <= 0:
+        raise ValueError(
+            "El contorno no tiene un área válida."
+        )
+
+    # Convertir la fruta a HSV.
+    hsv = cv2.cvtColor(
+        image_bgr,
+        cv2.COLOR_BGR2HSV
+    )
+
+    # Histograma únicamente sobre la máscara.
+    histograma = cv2.calcHist(
+        [hsv],
+        [0, 1, 2],
+        mascara,
+        bins,
+        [0, 180, 0, 256, 0, 256]
+    )
+
+    # Mantener la normalización L2 de Diana.
+    cv2.normalize(
+        histograma,
+        histograma
+    )
+
+    # Características geométricas.
+    _, _, ancho, alto = cv2.boundingRect(
+        contorno
+    )
+
+    relacion_aspecto = (
+        ancho / alto if alto else 1.0
+    )
+
+    extension = (
+        area / (ancho * alto)
+        if ancho * alto else 0.0
+    )
+
+    area_convexa = cv2.contourArea(
+        cv2.convexHull(contorno)
+    )
+
+    solidez = (
+        area / area_convexa
+        if area_convexa else 0.0
+    )
+
+    diametro_relativo = (
+        np.sqrt(4 * area / np.pi)
+        / max(mascara.shape)
+    )
+
+    geometria = np.array(
+        [
+            diametro_relativo,
+            relacion_aspecto,
+            extension,
+            solidez
+        ],
+        dtype=np.float32
+    )
+
+    return np.concatenate([
+        histograma.flatten().astype(np.float32),
+        geometria
+    ])
+
+
+# ============================================================
+# 2. AUMENTACIÓN DE IMAGEN Y MÁSCARA
+# ============================================================
+
+def _aumentar_par_rembg(
+    imagen,
+    mascara,
+    rng
+):
+    """
+    Aplica las mismas transformaciones geométricas
+    a la fruta y a su máscara binaria.
+    """
+
+    imagen = imagen.copy()
+    mascara = mascara.copy()
+
+    if rng.random() > 0.5:
+        imagen = cv2.flip(imagen, 1)
+        mascara = cv2.flip(mascara, 1)
+
+    if rng.random() > 0.5:
+        imagen = cv2.flip(imagen, 0)
+        mascara = cv2.flip(mascara, 0)
+
+    rotaciones = int(rng.integers(0, 4))
+
+    if rotaciones:
+        imagen = np.ascontiguousarray(
+            np.rot90(imagen, rotaciones)
+        )
+
+        mascara = np.ascontiguousarray(
+            np.rot90(mascara, rotaciones)
+        )
+
+    # Variación moderada de brillo.
+    hsv = cv2.cvtColor(
+        imagen,
+        cv2.COLOR_BGR2HSV
+    ).astype(np.float32)
+
+    factor = rng.uniform(0.9, 1.1)
+
+    hsv[..., 2] = np.clip(
+        hsv[..., 2] * factor,
+        0,
+        255
+    )
+
+    imagen = cv2.cvtColor(
+        hsv.astype(np.uint8),
+        cv2.COLOR_HSV2BGR
+    )
+
+    return imagen, mascara
+
+
+# ============================================================
+# 3. PREPARAR MATRICES PARA ML TRADICIONAL
+# ============================================================
+
+def prepare_ml_split_rembg(
+    df: pd.DataFrame,
+    augment_minorities: bool = False,
+    target_per_quality: int = 300,
+    random_state: int = 42
+):
+    """
+    Prepara X, y_quality e y_size para ML tradicional.
+
+    Utiliza las máscaras almacenadas por rembg.
+    La aumentación debe utilizarse solo en train.
+    """
+
+    rng = np.random.default_rng(random_state)
+
+    X = []
+    y_quality = []
+    y_size = []
+
+    def agregar_fotografia(row, aumentar=False):
+
+        imagen, mascara = _leer_par_rembg(row)
+
+        if aumentar:
+            imagen, mascara = _aumentar_par_rembg(
+                imagen,
+                mascara,
+                rng
+            )
+
+        caracteristicas = extract_ml_features_rembg(
+            imagen,
+            mascara
+        )
+
+        X.append(caracteristicas)
+
+        y_quality.append(
+            QUALITY_TO_IDX[row["quality"]]
+        )
+
+        y_size.append(
+            SIZE_TO_IDX[row["size_label"]]
+        )
+
+    # Imágenes originales procesadas.
+    for _, fila in df.iterrows():
+        agregar_fotografia(fila)
+
+    # Aumento de clases minoritarias.
+    if augment_minorities:
+
+        for calidad in QUALITY_TO_IDX:
+
+            subset = df[
+                df["quality"] == calidad
+            ]
+
+            faltantes = max(
+                0,
+                target_per_quality - len(subset)
+            )
+
+            if faltantes > 0 and not subset.empty:
+
+                seleccion = subset.sample(
+                    n=faltantes,
+                    replace=True,
+                    random_state=random_state
+                )
+
+                for _, fila in seleccion.iterrows():
+                    agregar_fotografia(
+                        fila,
+                        aumentar=True
+                    )
+
+    if not X:
+        raise ValueError(
+            "No hay fotografías para preparar."
+        )
+
+    return (
+        np.stack(X).astype(np.float32),
+        np.array(y_quality, dtype=np.int64),
+        np.array(y_size, dtype=np.int64)
+    )
+
+
+# ============================================================
+# 4. PREPARAR MATRICES PARA CNN
+# ============================================================
+
+def prepare_cnn_split_rembg(
+    df: pd.DataFrame,
+    target_size: tuple[int, int] = (128, 128),
+    augment_minorities: bool = False,
+    target_per_quality: int = 300,
+    random_state: int = 42
+):
+    """
+    Prepara imágenes HSV normalizadas para CNN.
+
+    Utiliza los recortes de rembg de 224x224
+    con fondo negro.
+
+    Las imágenes finales tienen dimensiones
+    128x128x3, igual que en el código de Diana.
+    """
+
+    rng = np.random.default_rng(random_state)
+
+    X = []
+    y_quality = []
+    y_size = []
+
+    def agregar_fotografia(row, aumentar=False):
+
+        ruta_imagen = (
+            PROJECT_ROOT / str(row["cnn_filepath"])
+        )
+
+        imagen = cv2.imread(
+            str(ruta_imagen),
+            cv2.IMREAD_COLOR
+        )
+
+        if imagen is None:
+            raise FileNotFoundError(
+                f"No existe la imagen: {ruta_imagen}"
+            )
+
+        if aumentar:
+            imagen = augment_image_bgr(
+                imagen,
+                rng
+            )
+
+        imagen_preparada = preprocess_image_for_cnn(
+            imagen,
+            target_size=target_size
+        )
+
+        X.append(imagen_preparada)
+
+        y_quality.append(
+            QUALITY_TO_IDX[row["quality"]]
+        )
+
+        y_size.append(
+            SIZE_TO_IDX[row["size_label"]]
+        )
+
+    # Imágenes originales segmentadas.
+    for _, fila in df.iterrows():
+        agregar_fotografia(fila)
+
+    # Aumento exclusivamente para entrenamiento.
+    if augment_minorities:
+
+        for calidad in QUALITY_TO_IDX:
+
+            subset = df[
+                df["quality"] == calidad
+            ]
+
+            faltantes = max(
+                0,
+                target_per_quality - len(subset)
+            )
+
+            if faltantes > 0 and not subset.empty:
+
+                seleccion = subset.sample(
+                    n=faltantes,
+                    replace=True,
+                    random_state=random_state
+                )
+
+                for _, fila in seleccion.iterrows():
+                    agregar_fotografia(
+                        fila,
+                        aumentar=True
+                    )
+
+    if not X:
+        raise ValueError(
+            "No hay fotografías para preparar."
+        )
+
+    return (
+        np.stack(X).astype(np.float32),
+        np.array(y_quality, dtype=np.int64),
+        np.array(y_size, dtype=np.int64)
+    )
+

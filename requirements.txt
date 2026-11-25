@@ -22,3 +22,7 @@ streamlit
 # Pruebas y Utilidades
 pytest
 jupyter
+
+
+rembg[cpu]
+Pillow>=11,<13
