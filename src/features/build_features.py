@@ -45,6 +45,7 @@ from sklearn.model_selection import StratifiedGroupKFold
 
 from src.utils.config import (
     CNN_IMAGE_SIZE,
+    DATA_PROCESSED,
     FEATURES_DIR,
     LABELS_CSV,
     PROJECT_ROOT,
@@ -278,10 +279,27 @@ def a_cuadrado(
     return lienzo
 
 
-def _mascara_de_fila(fila: pd.Series, imagen: np.ndarray) -> np.ndarray:
+CACHE_MASCARAS = DATA_PROCESSED / "mascaras"
+
+
+def _mascara_de_fila(fila: pd.Series, imagen: np.ndarray, usar_rembg: bool = True) -> tuple[np.ndarray, str]:
     """
-    Devuelve la mascara de la fruta: la de rembg si el manifiesto la registro,
-    y si no la heuristica de saturacion + Otsu.
+    Devuelve (mascara, metodo) de la fruta, por orden de preferencia:
+
+    1. La mascara que el manifiesto de segmentacion haya registrado.
+    2. La mascara cacheada en data_processed/mascaras/ de una corrida anterior.
+    3. rembg + descarte de piel, **solo para las fotografias propias**.
+    4. La heuristica de saturacion + Otsu.
+
+    Por que rembg solo en las fotografias propias: las imagenes de Kaggle estan
+    tomadas en estudio sobre fondo neutro, donde la heuristica acierta y cuesta
+    milisegundos; rembg tardaria segundos por imagen sin mejorar nada. Las
+    fotografias propias, en cambio, tienen fondos reales. El caso extremo son
+    los limones deteriorados sobre un cajon de limones sanos: ahi la heuristica
+    segmenta el fondo en lugar de la fruta, porque el fondo es mas saturado.
+
+    Las mascaras se cachean en disco porque calcularlas con rembg cuesta unos
+    3 segundos por imagen y el pipeline se reejecuta a menudo.
     """
     ruta_mascara = fila.get("mask_filepath", "")
     if isinstance(ruta_mascara, str) and ruta_mascara:
@@ -289,12 +307,29 @@ def _mascara_de_fila(fila: pd.Series, imagen: np.ndarray) -> np.ndarray:
         if ruta.exists():
             mascara = cv2.imread(str(ruta), cv2.IMREAD_GRAYSCALE)
             if mascara is not None:
-                return mascara
+                return mascara, "manifiesto"
+
+    es_propia = str(fila.get("source", "")) == "recolectado"
+    ruta_cache = CACHE_MASCARAS / (str(fila["filepath"]).replace("/", "__") + ".png")
+
+    if es_propia and ruta_cache.exists():
+        mascara = cv2.imread(str(ruta_cache), cv2.IMREAD_GRAYSCALE)
+        if mascara is not None and mascara.shape[:2] == imagen.shape[:2]:
+            return mascara, "cache"
+
+    if es_propia and usar_rembg:
+        from src.features.segmentacion import disponible, mascara_fruta
+
+        if disponible():
+            mascara, metodo = mascara_fruta(imagen)
+            ruta_cache.parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(ruta_cache), mascara)
+            return mascara, metodo
 
     from src.data.build_dataset import get_fruit_mask_and_size
 
     mascara, _, _ = get_fruit_mask_and_size(imagen)
-    return mascara
+    return mascara, "heuristica"
 
 
 def limitar_fuente(
@@ -341,6 +376,7 @@ def construir(
     con_cnn: bool = True,
     limite: int | None = None,
     max_kaggle: int = 0,
+    usar_rembg: bool = True,
     semilla: int = RANDOM_STATE,
 ) -> dict:
     """
@@ -380,6 +416,7 @@ def construir(
         raise ValueError("tipo_features debe ser 'enriched' o 'baseline'")
 
     filas_validas: list[int] = []
+    metodos_mascara: list[str] = []
     hashes: list[int] = []
     lista_features: list[np.ndarray] = []
     lista_imgs: list[np.ndarray] = []
@@ -392,7 +429,8 @@ def construir(
             print(f"[AVISO] ilegible, se descarta: {ruta}")
             continue
 
-        mascara = _mascara_de_fila(fila, imagen)
+        mascara, metodo_mascara = _mascara_de_fila(fila, imagen, usar_rembg=usar_rembg)
+        metodos_mascara.append(metodo_mascara)
 
         hashes.append(dhash(imagen))
         lista_features.append(extractor(imagen, mascara))
@@ -417,6 +455,7 @@ def construir(
     print(f"  grupos unicos: {n_grupos} para {len(df)} imagenes")
     print(f"  tasa de duplicacion aparente: {1 - n_grupos / max(len(df), 1):.1%}")
 
+    df["metodo_mascara"] = metodos_mascara
     df["dhash"] = [f"{h:016x}" for h in hashes]
     df["grupo_duplicado"] = grupos
     df["split"] = particionar_por_grupos(df, grupos, semilla=semilla)
@@ -453,6 +492,7 @@ def construir(
         "cnn_image_size": list(CNN_IMAGE_SIZE),
         "conteo_split": df["split"].value_counts().to_dict(),
         "conteo_quality": df["quality"].value_counts().to_dict(),
+        "metodo_mascara": df["metodo_mascara"].value_counts().to_dict(),
         "conteo_size": df["size_label"].value_counts().to_dict(),
         "quality_por_split": (
             pd.crosstab(df["split"], df["quality"]).to_dict(orient="index")
@@ -488,6 +528,11 @@ def main() -> None:
             default=0,
             help="Maximo de imagenes de Kaggle por fruta x calidad (0 = sin limite)",
         )
+        parser.add_argument(
+            "--sin-rembg",
+            action="store_true",
+            help="No usar rembg en las fotografias propias (mas rapido, menos preciso)",
+        )
         args = parser.parse_args()
 
         construir(
@@ -495,6 +540,7 @@ def main() -> None:
             con_cnn=not args.no_cnn,
             limite=args.limit,
             max_kaggle=args.max_kaggle,
+            usar_rembg=not args.sin_rembg,
         )
 
 

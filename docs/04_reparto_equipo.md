@@ -42,14 +42,19 @@ El conteo de archivos engaña. Lo que importa son las fotos originales: 148 de
 las 854 son variantes generadas con aumentación (`_aug_NNN`), y en algunos
 casos casi toda la carpeta sale de unas pocas fotos.
 
-| Fruta | Archivos | **Fotos originales** | Tomar |
+| Fruta | Archivos `regular` | **Fotos originales** | Falta tomar |
 |---|---|---|---|
 | limón/lima | 39 | **5** | **70** |
-| manzana | 24 | 24 | **70** |
-| naranja | 36 | 36 | **50** |
 | guayaba | 62 | 62 | **50** |
 | banano | 66 | 66 | **40** |
-| **Total** | 227 | **193** | **280** |
+| manzana | 76 | 76 | hecho |
+| naranja | 93 | 93 | hecho |
+| **Total** | **360** | **337** | **160** |
+
+> **Actualización.** La segunda recolección aportó 70 manzanas y 57 naranjas
+> `regular`. Tras la revisión de etiquetas (16 reetiquetadas a `good` y 2
+> excluidas por no ser frutas individuales), la clase `regular` pasó de 238 a
+> 360 imágenes. Quedan pendientes limón, guayaba y banano.
 
 Condiciones de captura (ver `docs/01_metodologia_crisp_dm.md` §3.3):
 
@@ -85,13 +90,31 @@ Procedimiento: recortar cada fruta individual, descartar las ráfagas
 repetidas, etiquetar con el protocolo de `docs/01` §3.2 y guardar en
 `data_raw/recolectado/<Calidad>_Quality_Fruits/<fruta>_<calidad>/`.
 
-**1.4 Medir el acuerdo entre anotadores**
+**1.4 Medir el acuerdo entre anotadores** — material ya preparado
 
 Dos personas etiquetan las mismas 100 imágenes por separado y se calcula el
-$\kappa$ de Cohen. Si sale por debajo de 0,6, el protocolo de anotación no es
+$\kappa$ de Cohen. Si sale por debajo de 0,60, el protocolo de anotación no es
 suficientemente claro y hay que ajustarlo **antes** de seguir anotando. Sin
 esta medición no se puede afirmar en el informe que las etiquetas son
 confiables.
+
+El ejercicio ya está armado con una muestra estratificada de 100 fotografías
+propias, barajadas y sin mostrar su etiqueta actual:
+
+- Hoja de contacto numerada: `docs/anotacion/acuerdo_hoja_de_contacto.jpg`
+- Plantilla a llenar: `docs/anotacion/acuerdo_plantilla.csv`
+
+Cada persona copia la plantilla con su nombre, la llena mirando **solo** la
+hoja de contacto y sin consultar con la otra. Después:
+
+```powershell
+python -m src.evaluation.acuerdo calcular docs/anotacion/acuerdo_ana.csv docs/anotacion/acuerdo_juan.csv
+```
+
+Reporta el $\kappa$ simple, el $\kappa$ ponderado cuadrático (que penaliza más
+confundir `good` con `bad` que `good` con `regular`, porque las clases están
+ordenadas) y la matriz de acuerdo, que señala exactamente qué pares de clases
+hay que precisar en el protocolo.
 
 ---
 
@@ -220,6 +243,13 @@ exactitud. Están medidos, no supuestos.
 5. **Hay cambio de dominio entre las dos fuentes.** Las imágenes de Kaggle son
    de estudio y las propias de plaza de mercado. Se mide el desempeño por
    fuente, porque un promedio global lo escondería.
+6. **Se detectó y corrigió un confusor por condición de captura.** Toda la
+   segunda recolección se hizo en un supermercado y, al principio, toda ella
+   pertenecía a la clase `regular`. Un clasificador separaba esas imágenes de
+   las `good` con 81,7 % de exactitud usando forma e iluminación, no defectos:
+   la fracción de píxeles oscuros incluso iba en sentido contrario al
+   esperado. Se corrigió reetiquetando, de modo que la clase `good` también
+   contiene fotografías de esa sesión. Detalle en `docs/01` §2.4.
 
 ---
 

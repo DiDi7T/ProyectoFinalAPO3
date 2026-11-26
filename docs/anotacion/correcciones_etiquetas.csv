@@ -1,0 +1,42 @@
+archivo,carpeta,accion,etiqueta_nueva,motivo,revisor,fecha
+IMG_8823.HEIC,apple_regular,excluir,,no es una fruta individual: cajon de manzanas del supermercado,equipo,2026-11-26
+IMG_8824.HEIC,apple_regular,excluir,,no es una fruta individual: estanteria del supermercado,equipo,2026-11-26
+IMG_8817.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8818.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8820.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8821.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8822.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8826.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8842.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8849.HEIC,apple_regular,reetiquetar,good,sin defectos visibles segun el protocolo de docs/01 seccion 3.2,equipo,2026-11-26
+IMG_8830.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_8835.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_8836.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_8838.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_8843.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_8882.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_8887.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_8888.HEIC,apple_regular,reetiquetar,good,sin defectos visibles; indicadores de deterioro al nivel de las anteriores,revision posterior,2026-11-26
+IMG_0021.HEIC,lime_bad,excluir,,"borrosa, no se distingue una fruta individual",revision posterior,2026-11-26
+IMG_0041.HEIC,lime_bad,excluir,,borrosa y la fruta queda fuera de foco,revision posterior,2026-11-26
+IMG_0042.HEIC,lime_bad,excluir,,"muestra el cajon completo, no una fruta individual",revision posterior,2026-11-26
+IMG_0043.HEIC,lime_bad,excluir,,"muestra varias frutas del monton, no una individual",revision posterior,2026-11-26
+IMG_0047.HEIC,lime_bad,excluir,,la fruta queda cortada y predomina el fondo,revision posterior,2026-11-26
+IMG_0049.HEIC,lime_bad,excluir,,primer plano parcial: la fruta sale del encuadre,revision posterior,2026-11-26
+20260524_180418_aug_001.jpg,lime_regular,reetiquetar,bad,"dos anotadores independientes coinciden en 'bad' frente a 'regular' (ejercicio de acuerdo, imagen #2)",acuerdo jjrr + diana,2026-11-26
+IMG_3556.jpg,banana_regular,reetiquetar,good,"dos anotadores independientes coinciden en 'good' frente a 'regular' (ejercicio de acuerdo, imagen #5)",acuerdo jjrr + diana,2026-11-26
+1794858712048.jpg,orange_bad,reetiquetar,good,"dos anotadores independientes coinciden en 'good' frente a 'bad' (ejercicio de acuerdo, imagen #15)",acuerdo jjrr + diana,2026-11-26
+IMG_3438.jpg,guava_regular,reetiquetar,good,"dos anotadores independientes coinciden en 'good' frente a 'regular' (ejercicio de acuerdo, imagen #24)",acuerdo jjrr + diana,2026-11-26
+IMG_0037.jpg,lime_bad,reetiquetar,regular,"dos anotadores independientes coinciden en 'regular' frente a 'bad' (ejercicio de acuerdo, imagen #30)",acuerdo jjrr + diana,2026-11-26
+IMG_3402.jpg,guava_good,reetiquetar,bad,"dos anotadores independientes coinciden en 'bad' frente a 'good' (ejercicio de acuerdo, imagen #55)",acuerdo jjrr + diana,2026-11-26
+20260524_180418_aug_002.jpg,lime_regular,reetiquetar,bad,"dos anotadores independientes coinciden en 'bad' frente a 'regular' (ejercicio de acuerdo, imagen #59)",acuerdo jjrr + diana,2026-11-26
+IMG_8860.jpg,apple_regular,reetiquetar,good,"dos anotadores independientes coinciden en 'good' frente a 'regular' (ejercicio de acuerdo, imagen #63)",acuerdo jjrr + diana,2026-11-26
+1794858711843.jpg,orange_bad,reetiquetar,regular,"dos anotadores independientes coinciden en 'regular' frente a 'bad' (ejercicio de acuerdo, imagen #66)",acuerdo jjrr + diana,2026-11-26
+IMG_0018.jpg,lime_bad,reetiquetar,regular,"dos anotadores independientes coinciden en 'regular' frente a 'bad' (ejercicio de acuerdo, imagen #68)",acuerdo jjrr + diana,2026-11-26
+1794858712681.jpg,orange_regular,reetiquetar,good,"dos anotadores independientes coinciden en 'good' frente a 'regular' (ejercicio de acuerdo, imagen #72)",acuerdo jjrr + diana,2026-11-26
+20260524_180418_aug_006.jpg,lime_regular,reetiquetar,bad,"dos anotadores independientes coinciden en 'bad' frente a 'regular' (ejercicio de acuerdo, imagen #80)",acuerdo jjrr + diana,2026-11-26
+grupoAPO_guayaba_regular_01.jpg,guava_regular,reetiquetar,bad,"dos anotadores independientes coinciden en 'bad' frente a 'regular' (ejercicio de acuerdo, imagen #83)",acuerdo jjrr + diana,2026-11-26
+IMG_3369.jpg,banana_regular,reetiquetar,good,"dos anotadores independientes coinciden en 'good' frente a 'regular' (ejercicio de acuerdo, imagen #86)",acuerdo jjrr + diana,2026-11-26
+IMG_3389.jpg,guava_good,reetiquetar,regular,"dos anotadores independientes coinciden en 'regular' frente a 'good' (ejercicio de acuerdo, imagen #87)",acuerdo jjrr + diana,2026-11-26
+1794858711943.jpg,orange_bad,reetiquetar,regular,"dos anotadores independientes coinciden en 'regular' frente a 'bad' (ejercicio de acuerdo, imagen #92)",acuerdo jjrr + diana,2026-11-26
+1794858711870.jpg,orange_bad,reetiquetar,regular,"dos anotadores independientes coinciden en 'regular' frente a 'bad' (ejercicio de acuerdo, imagen #93)",acuerdo jjrr + diana,2026-11-26

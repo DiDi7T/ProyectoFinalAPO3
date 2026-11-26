@@ -123,7 +123,10 @@ Enlace del dataset público:
    neutro; las propias tienen manos, mesones de granito, bolsas y sombras. La
    heurística de segmentación por saturación funciona mucho mejor en las
    primeras.
-7. **La clase `regular` es minoritaria:** 221 de 3.356 imágenes (6,6 %).
+7. **La clase `regular` es minoritaria:** aun después de la segunda
+   recolección sigue siendo la clase con menos soporte.
+8. **Confusor por condiciones de captura.** Es el hallazgo metodológicamente
+   más delicado del proyecto y se detalla en §2.4.
 
 ### 2.3 Composición final del dataset consolidado
 
@@ -136,6 +139,56 @@ Enlace del dataset público:
 *Los conteos exactos de la corrida vigente están en
 `data_processed/features/meta.json` y en
 `experiments/results/informe_consolidado.md`.*
+
+### 2.4 Confusor por condiciones de captura
+
+La segunda recolección (127 fotografías de manzana y naranja `regular`) se
+hizo en un supermercado: fruta sostenida con la mano, piso de baldosa al
+fondo e iluminación de tienda. Las fotografías anteriores se habían tomado en
+casa, sobre mesón y con otra luz.
+
+El problema es que **esa condición de captura coincidía exactamente con una
+sola clase**: al principio, toda fotografía tomada en el supermercado era
+`regular`. Un clasificador puede entonces alcanzar una exactitud alta sin
+aprender nada sobre calidad, usando la condición de captura como atajo. Es un
+caso de **correlación espuria**: la variable que el modelo explota está
+correlacionada con la etiqueta en el conjunto de entrenamiento, pero no tiene
+relación causal con el fenómeno.
+
+**Medición del confusor.** Se compararon 30 manzanas `good` (sesión en casa)
+con 30 manzanas `regular` (sesión en supermercado) usando el vector de 93
+características. Un clasificador lineal las separa con **81,7 % de exactitud**
+por validación cruzada. Pero los descriptores responsables no son los de
+deterioro:
+
+| Descriptor | `good` | `regular` | d de Cohen | Qué mide realmente |
+|---|---|---|---|---|
+| circularidad | 0,757 | 0,467 | −1,99 | ángulo y encuadre |
+| solidez | 0,967 | 0,852 | −2,19 | ángulo y encuadre |
+| asimetría de V | −1,01 | 0,32 | 2,24 | iluminación de la sesión |
+| fracción de píxeles oscuros | 0,120 | 0,047 | −1,06 | **va en sentido contrario** al esperado |
+
+La última fila es la evidencia decisiva: si las `regular` estuvieran más
+deterioradas tendrían *más* zonas oscuras, no menos. La separación proviene de
+la sesión fotográfica, no de la fruta.
+
+**Por qué no se resuelve con fondo blanco.** Se verificó empíricamente: al
+sustituir el fondo por blanco puro, **82 de las 93 características no cambian
+en absoluto**, porque todas se calculan únicamente sobre los píxeles de la
+máscara. La única que cambia de forma apreciable es `contraste_local`, que al
+medir el gradiente de Sobel incorpora el borde de la máscara. El confusor está
+dentro de la región de la fruta (iluminación y ángulo), no en el fondo, de
+modo que eliminar el fondo no lo corrige. Sí beneficiaría a la CNN, que es el
+único modelo que observa la imagen completa.
+
+**Mitigación aplicada.** Tras la revisión de etiquetas descrita en §3.3, 16 de
+las fotografías del supermercado pasaron a la clase `good`. Con eso, la
+condición de captura deja de ser exclusiva de `regular` y el atajo pierde
+valor predictivo, sin necesidad de una nueva sesión fotográfica.
+
+**Lección para futuras recolecciones:** en cada sesión deben fotografiarse
+**todas** las clases. Si una sesión aporta una sola clase, la sesión misma se
+convierte en una variable predictiva.
 
 ---
 
@@ -187,6 +240,16 @@ definición operativa. **Debe aplicarse igual por los cuatro integrantes.**
 | `regular` | Entre 5 % y 25 % de la superficie con manchas, pardeamiento, raspones o golpes leves. Deformación o maduración desigual. Sigue siendo comestible | Venta con descuento o procesamiento |
 | `bad` | Más del 25 % de la superficie afectada, o presencia de moho, exudado, hundimiento profundo o fermentación | Descarte o compostaje |
 
+**Ejemplos de referencia**
+
+![Ejemplos de cada clase](figuras/protocolo_ejemplos.jpg)
+
+Los nueve ejemplos de la figura no se eligieron a dedo: son casos en los que
+**los dos anotadores del ejercicio de acuerdo y la etiqueta del dataset
+coinciden**, de modo que representan el nucleo indiscutible de cada clase. Ante
+una fruta dudosa, la pregunta operativa es a cual de estas nueve se parece
+mas.
+
 **Reglas de desempate:**
 1. Ante duda entre dos clases, se asigna la **peor** de las dos (criterio
    conservador: es más costoso vender fruta mala que descartar fruta buena).
@@ -201,7 +264,76 @@ operativas y hay que refinarlas antes de entrenar. *Esta medición está
 pendiente y es un requisito para el informe final: sin ella no se puede
 afirmar que las etiquetas sean confiables.*
 
-### 3.3 Protocolo de captura (pendiente de aplicar)
+### 3.3 Revisión de etiquetas
+
+Las etiquetas de la segunda recolección se revisaron antes de entrenar,
+combinando dos criterios:
+
+1. **Inspección visual.** Se generaron hojas de contacto numeradas con las 127
+   fotografías recortadas a la región de la fruta, lo que permite revisarlas
+   en bloque en lugar de archivo por archivo.
+2. **Indicadores objetivos.** Se ordenaron las 70 manzanas por un puntaje de
+   deterioro construido con la media de tres descriptores estandarizados:
+   fracción de píxeles oscuros, fracción de tonos pardos y entropía del canal
+   V. El orden sirvió para detectar imágenes cuya etiqueta no coincidía con lo
+   medido, no para etiquetar automáticamente.
+
+**Resultado:** 18 correcciones sobre 127 imágenes.
+
+| Acción | Cantidad | Motivo |
+|---|---|---|
+| Excluir | 2 | No son frutas individuales: son fotografías de cajones y estanterías del supermercado, con decenas de manzanas |
+| `regular` → `good` | 16 | Superficie sin manchas, golpes ni cicatrices visibles, por debajo del umbral de 5 % de superficie afectada que define `regular` |
+
+Las naranjas **no** requirieron corrección: prácticamente todas presentan
+manchas pardas, cicatrices o zonas hundidas claramente visibles.
+
+**Trazabilidad.** Cada corrección queda registrada en
+[`docs/anotacion/correcciones_etiquetas.csv`](anotacion/correcciones_etiquetas.csv)
+con el archivo, la etiqueta original, la nueva, el motivo, el revisor y la
+fecha. `src.data.ingest_recolectado` lee ese archivo y aplica las correcciones
+automáticamente, de modo que reconstruir el dataset desde el material original
+produce exactamente el mismo resultado.
+
+Este registro es un requisito ético, no solo técnico: sin él, un reetiquetado
+es indistinguible de ajustar los datos para mejorar las métricas, y el
+enunciado del curso es explícito en que eso constituye fraude.
+
+### 3.3.1 Resultado del acuerdo entre anotadores
+
+Dos integrantes etiquetaron por separado las mismas 100 fotografías propias,
+muestreadas de forma estratificada y barajadas, sin ver la etiqueta vigente.
+
+| Qué se mide | $\kappa$ | Acuerdo |
+|---|---|---|
+| Las tres clases | **0,470** | 65 % |
+| Vendible (`good`+`regular`) vs descarte (`bad`) | **0,828** | 93 % |
+| Primera calidad (`good`) vs el resto | 0,401 | 71 % |
+| Las tres clases, $\kappa$ ponderado cuadrático | 0,720 | — |
+
+**Lectura.** La decisión que importa para el negocio —si la fruta se vende o
+se descarta— tiene acuerdo casi perfecto. Lo que no es reproducible es la
+frontera entre primera y segunda calidad: 28 de los 35 desacuerdos están
+entre `good` y `regular`, y solo **un** caso de 100 se separó dos niveles
+(ninguno confundió fruta sana con podrida). De ahí que el $\kappa$ ponderado
+sea mucho más alto que el simple.
+
+**Consecuencia para la interpretación de resultados.** El recall del modelo en
+la clase `regular` no puede superar de forma consistente el acuerdo humano en
+esa misma frontera: parte del error residual no es del modelo sino de la
+definición de la categoría. Esto se retoma en el análisis de resultados.
+
+**Acciones derivadas:**
+
+1. Se añadieron al protocolo los nueve ejemplos de referencia de §3.2, para
+   sustituir umbrales porcentuales difíciles de aplicar por anclas visuales.
+2. Se corrigieron 17 etiquetas en las que **ambos** anotadores coincidían
+   contra la etiqueta vigente del dataset; quedan registradas en
+   `docs/anotacion/correcciones_etiquetas.csv`.
+
+Reproducible con `python -m src.evaluation.acuerdo calcular <a.csv> <b.csv>`.
+
+### 3.4 Protocolo de captura (pendiente de aplicar)
 
 Para que la estimación de tamaño sea físicamente válida (ver
 `02_formulacion_matematica.md`, §5), las fotos nuevas deben tomarse con:

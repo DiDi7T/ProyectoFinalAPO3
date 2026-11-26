@@ -17,7 +17,7 @@ Esta tabla no es genérica: cada fila corresponde a una situación concreta de
 
 | # | Dilema | Situación concreta | Principio | Decisión adoptada | Evidencia |
 |---|---|---|---|---|---|
-| 1 | **Privacidad de terceros** | Las 854 fotografías propias se tomaron en plazas de mercado, supermercados y hogares. Pueden contener manos, rostros al fondo, letreros de locales o identificadores del puesto | 1.6 Respetar la privacidad | Revisar las 854 imágenes y recortar o difuminar cualquier persona identificable, letrero o documento antes de publicar el dataset. **Pendiente: es requisito antes de compartir con otros grupos** | `data_raw/recolectado/` |
+| 1 | **Privacidad de terceros** | Las 1.019 fotografías propias se tomaron en plazas de mercado, supermercados y hogares. Pueden contener manos, rostros al fondo, letreros de locales o identificadores del puesto | 1.6 Respetar la privacidad | Revisión automática con detector facial sobre las 1.019 imágenes: 39 marcadas, **0 rostros confirmados**. Las manos que sostienen la fruta no identifican a nadie. Queda pendiente la revisión de letreros | `src/data/revision_privacidad.py` |
 | 2 | **Consentimiento del comerciante** | Se fotografió mercancía ajena dentro de establecimientos, posiblemente sin pedir permiso | 1.6, 2.3 | Documentar en el informe si se pidió autorización. Si no, no publicar imágenes donde el puesto sea identificable | — |
 | 3 | **Sesgo de origen de los datos** | El 74 % de las imágenes viene de un dataset público capturado en otro país, con variedades, calibres y estándares de madurez distintos a los colombianos | 1.4 Ser justo y no discriminar | Medir explícitamente el desempeño por fuente (`kaggle` vs `recolectado`) en lugar de reportar un único número global | `src/evaluation/evaluate.py::analisis_por_fuente` |
 | 4 | **Desempeño desigual entre clases** | El recall de `regular` es 0,585 frente a 0,95 de `good` y `bad`. El sistema falla justo en la categoría que decide si una fruta se vende con descuento o se descarta | 1.4, 2.5 | Reportar siempre el recall por clase y nunca solo la exactitud. Ponderación de clases en el entrenamiento. Recolectar más imágenes de la clase débil | `experiments/results/classic_quality_metrics.json` |
@@ -146,14 +146,27 @@ Lo que un lector del informe puede comprobar en el repositorio:
 1. El criterio de clasificación está escrito y es público (`docs/01` §3.2).
 2. Las métricas se reportan por clase y por fuente, no solo en agregado.
 3. Los errores costosos se cuentan por separado (falsos `good` sobre `bad`).
-4. Las limitaciones conocidas están documentadas, incluida la que vuelve
+4. Toda corrección de etiqueta queda registrada en
+   `docs/anotacion/correcciones_etiquetas.csv` con su motivo y su revisor, y
+   se aplica automáticamente al reconstruir el dataset. Reetiquetar sin dejar
+   rastro sería indistinguible de ajustar los datos para mejorar las
+   métricas.
+5. Las limitaciones conocidas están documentadas, incluida la que vuelve
    trivial la tarea de tamaño.
-5. El código que genera cada número es reproducible con semilla fija.
+6. El código que genera cada número es reproducible con semilla fija.
 
 ## 4. Pendientes éticos antes de la entrega
 
-- [ ] Revisar las 854 fotografías propias y tratar cualquier persona, rostro,
-      letrero o documento identificable.
+- [x] **Revisar las fotografías propias por rostros.** Hecho: el detector
+      facial YuNet recorrió las 1.019 fotografías
+      (`python -m src.data.revision_privacidad`). Marcó 39 imágenes y la
+      revisión humana confirmó que **ninguna contiene un rostro**: son falsos
+      positivos sobre manzanas con manchas, donde el patrón de dos motas
+      oscuras y una tercera debajo activa el detector, más una fotografía con
+      dedos en el encuadre. Informe en
+      `docs/anotacion/revision_privacidad.csv`.
+- [ ] Revisar a ojo letreros de establecimientos, documentos y etiquetas de
+      precio identificables; el detector automático no los cubre.
 - [ ] Documentar si se pidió autorización a los comerciantes.
 - [ ] Verificar y citar la licencia exacta del dataset de Kaggle.
 - [ ] Medir el $\kappa$ de Cohen entre dos anotadores sobre 100 imágenes

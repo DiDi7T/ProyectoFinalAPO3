@@ -48,7 +48,13 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageOps
 
-from src.utils.config import FRUIT_CLASSES, QUALITY_CLASSES, RANDOM_STATE, RECOLECTADO_DIR
+from src.utils.config import (
+    FRUIT_CLASSES,
+    PROJECT_ROOT,
+    QUALITY_CLASSES,
+    RANDOM_STATE,
+    RECOLECTADO_DIR,
+)
 
 try:  # Soporte HEIC: se registra el decodificador dentro de PIL
     import pillow_heif
@@ -69,6 +75,12 @@ CALIDAD_JPEG = 92
 # 28 archivos asi, todos recortes de solo dos bananos, el mas pequeno de
 # 19x54 pixeles.
 LADO_MINIMO = 256
+
+# Correcciones de anotacion revisadas por el equipo. Se versiona en docs/ (y no
+# en data_raw/, que esta fuera de git) porque es metadato de anotacion: deja
+# constancia de quien cambio que etiqueta y por que. Sin este registro, una
+# reetiqueta es indistinguible de un error.
+CORRECCIONES = PROJECT_ROOT / "docs" / "anotacion" / "correcciones_etiquetas.csv"
 
 # --- Normalizacion de nombres -------------------------------------------------
 # Las claves se buscan como subcadena del nombre de la carpeta o del archivo, ya
@@ -111,6 +123,29 @@ CARPETA_CALIDAD = {
 EN_ALCANCE = set(FRUIT_CLASSES)
 
 
+def cargar_correcciones(ruta: Path = CORRECCIONES) -> dict[str, dict]:
+    """
+    Lee las correcciones de anotacion revisadas a mano.
+
+    Devuelve un diccionario indexado por nombre de archivo original, con la
+    accion a aplicar: 'excluir' (la imagen no entra al dataset) o
+    'reetiquetar' (entra con otra clase de calidad).
+    """
+    if not ruta.exists():
+        return {}
+
+    with open(ruta, encoding="utf-8") as fh:
+        filas = list(csv.DictReader(fh))
+
+    # Se indexa por nombre SIN extension. Las fotografias se convierten de
+    # HEIC a JPEG durante la ingesta, de modo que el nombre que ve quien revisa
+    # (IMG_3362.jpg) no coincide con el del zip original (IMG_3362.HEIC).
+    # Comparar por raiz del nombre evita tener que saber de que formato venia.
+    correcciones = {Path(f["archivo"]).stem.lower(): f for f in filas}
+    print(f"Correcciones de anotacion cargadas: {len(correcciones)} de {ruta}")
+    return correcciones
+
+
 def _buscar(texto: str, tabla: dict[str, str]) -> str | None:
     """Primera coincidencia por subcadena, con la clave mas larga primero."""
     limpio = texto.lower()
@@ -120,7 +155,11 @@ def _buscar(texto: str, tabla: dict[str, str]) -> str | None:
     return None
 
 
-def etiquetar_entrada(ruta_zip_interna: str) -> tuple[str | None, str | None]:
+def etiquetar_entrada(
+    ruta_zip_interna: str,
+    fruta_defecto: str | None = None,
+    calidad_defecto: str | None = None,
+) -> tuple[str | None, str | None]:
     """
     Deduce (fruta, calidad) de una entrada del zip.
 
@@ -147,6 +186,15 @@ def etiquetar_entrada(ruta_zip_interna: str) -> tuple[str | None, str | None]:
             break
     if fruta is None:
         fruta = _buscar(nombre_archivo, FRUTAS)
+
+    # Algunos lotes llegan sin la fruta ni la calidad en la ruta (por ejemplo
+    # un zip con una sola carpeta 'Malas'). En ese caso se usan los valores
+    # indicados en la linea de comandos, que quedan registrados en el
+    # manifiesto para que la procedencia siga siendo rastreable.
+    if fruta is None:
+        fruta = fruta_defecto
+    if calidad is None:
+        calidad = calidad_defecto
 
     return fruta, calidad
 
@@ -186,6 +234,8 @@ def ingerir(
     lado_maximo: int = LADO_MAXIMO,
     lado_minimo: int = LADO_MINIMO,
     limite_por_clase: int | None = None,
+    fruta_defecto: str | None = None,
+    calidad_defecto: str | None = None,
     semilla: int = RANDOM_STATE,
 ) -> dict:
     """Extrae, normaliza y reorganiza el material propio. Devuelve un resumen."""
@@ -204,14 +254,63 @@ def ingerir(
         print(f"Entradas de imagen en el zip: {len(entradas)}")
 
         # 1. Etiquetar todo antes de escribir, para poder aplicar cupos.
+        correcciones = cargar_correcciones()
         clasificadas: dict[tuple[str, str], list[str]] = defaultdict(list)
         sin_etiqueta: list[str] = []
+        excluidas: list[tuple[str, str]] = []
+        claves_usadas: set[str] = set()
+        ambiguas: list[str] = []
+        reetiquetadas: list[tuple[str, str, str]] = []
+
         for entrada in sorted(entradas):
-            fruta, calidad = etiquetar_entrada(entrada)
+            fruta, calidad = etiquetar_entrada(entrada, fruta_defecto, calidad_defecto)
             if fruta is None or calidad is None:
                 sin_etiqueta.append(entrada)
                 continue
+
+            # Las correcciones revisadas a mano mandan sobre la carpeta de
+            # origen: la carpeta refleja como se organizo el material, la
+            # correccion refleja lo que el equipo verifico despues.
+            # Una correccion se aplica a UNA sola imagen. Hay nombres repetidos
+            # en el material (el mismo archivo en la raiz de la carpeta de
+            # calidad y dentro de la subcarpeta de la fruta), y como la ingesta
+            # recorre las entradas ordenadas, la primera coincidencia es la que
+            # conserva el nombre sin sufijo y la que se reviso. Las siguientes
+            # se avisan y se dejan con su etiqueta de carpeta.
+            clave = Path(entrada).stem.lower()
+            correccion = correcciones.get(clave)
+            if correccion and clave in claves_usadas:
+                ambiguas.append(entrada)
+                correccion = None
+            elif correccion:
+                claves_usadas.add(clave)
+
+            if correccion:
+                if correccion["accion"] == "excluir":
+                    excluidas.append((entrada, correccion["motivo"]))
+                    continue
+                if correccion["accion"] == "reetiquetar":
+                    nueva = correccion["etiqueta_nueva"].strip().lower()
+                    if nueva in CARPETA_CALIDAD:
+                        reetiquetadas.append((entrada, calidad, nueva))
+                        calidad = nueva
+
             clasificadas[(fruta, calidad)].append(entrada)
+
+        if ambiguas:
+            print(f"[AVISO] {len(ambiguas)} imagenes comparten nombre con una ya corregida")
+            print("        y conservan la etiqueta de su carpeta:")
+            for entrada in ambiguas[:5]:
+                print(f"        {entrada}")
+
+        if excluidas:
+            print(f"[CORRECCION] {len(excluidas)} imagenes excluidas por revision manual:")
+            for entrada, motivo in excluidas:
+                print(f"             {Path(entrada).name}: {motivo}")
+        if reetiquetadas:
+            print(f"[CORRECCION] {len(reetiquetadas)} imagenes reetiquetadas:")
+            for entrada, antes, ahora in reetiquetadas:
+                print(f"             {Path(entrada).name}: {antes} -> {ahora}")
 
         if sin_etiqueta:
             print(f"[AVISO] {len(sin_etiqueta)} entradas sin etiqueta deducible:")
@@ -326,6 +425,17 @@ def main() -> None:
     parser.add_argument("--zip", required=True, type=Path, help="Zip con las fotografias propias")
     parser.add_argument("--lado-maximo", type=int, default=LADO_MAXIMO)
     parser.add_argument(
+        "--fruta",
+        default=None,
+        help="Fruta a asumir cuando la ruta del zip no la indica (p. ej. lime)",
+    )
+    parser.add_argument(
+        "--calidad",
+        default=None,
+        choices=("good", "regular", "bad"),
+        help="Calidad a asumir cuando la ruta del zip no la indica",
+    )
+    parser.add_argument(
         "--lado-minimo",
         type=int,
         default=LADO_MINIMO,
@@ -348,6 +458,8 @@ def main() -> None:
         lado_maximo=args.lado_maximo,
         lado_minimo=args.lado_minimo,
         limite_por_clase=args.limite_por_clase,
+        fruta_defecto=args.fruta,
+        calidad_defecto=args.calidad,
     )
 
 
