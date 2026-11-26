@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1330" width="1000" height="1330" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a365d"/>
+    </marker>
+    <marker id="flechaRetro" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9b2c2c"/>
+    </marker>
+    <marker id="flechaDatos" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2f855a"/>
+    </marker>
+    <style>
+      .fase      { fill: #ebf4ff; stroke: #1a365d; stroke-width: 2; }
+      .datos     { fill: #f0fff4; stroke: #2f855a; stroke-width: 2; }
+      .leyenda   { fill: #fffaf0; stroke: #9b2c2c; stroke-width: 1.5; }
+      .num       { fill: #1a365d; font-size: 15px; font-weight: bold; }
+      .titulo    { fill: #1a365d; font-size: 17px; font-weight: bold; }
+      .detalle   { fill: #2d3748; font-size: 12.5px; }
+      .nota      { fill: #4a5568; font-size: 12px; }
+      .retro     { fill: #9b2c2c; font-size: 12.5px; }
+      .retroId   { fill: #9b2c2c; font-size: 13px; font-weight: bold; }
+      .cabecera  { fill: #1a365d; font-size: 22px; font-weight: bold; }
+      .sub       { fill: #4a5568; font-size: 13px; }
+      .flecha    { stroke: #1a365d; stroke-width: 2.2; fill: none; marker-end: url(#flecha); }
+      .flechaR   { stroke: #9b2c2c; stroke-width: 1.8; fill: none; stroke-dasharray: 7 4; marker-end: url(#flechaRetro); }
+      .flechaD   { stroke: #2f855a; stroke-width: 2; fill: none; marker-end: url(#flechaDatos); }
+    </style>
+  </defs>
+
+  <rect width="1000" height="1330" fill="#ffffff"/>
+
+  <text x="40" y="44" class="cabecera">CRISP-DM aplicado a la clasificacion de calidad de frutas</text>
+  <text x="40" y="68" class="sub">Proyecto Final - Algoritmos y Programacion III - Universidad Icesi - 2026-2</text>
+  <line x1="40" y1="82" x2="960" y2="82" stroke="#cbd5e0" stroke-width="1.5"/>
+
+  <!-- ================= FUENTES DE DATOS ================= -->
+  <rect x="110" y="104" width="250" height="92" rx="8" class="datos"/>
+  <text x="126" y="126" class="titulo" font-size="14">Dataset publico (Kaggle)</text>
+  <text x="126" y="146" class="detalle">19.526 imagenes, 6 frutas</text>
+  <text x="126" y="164" class="detalle">Solo 2 clases: good / bad</text>
+  <text x="126" y="182" class="detalle">Estudio, fondo uniforme</text>
+
+  <rect x="390" y="104" width="250" height="92" rx="8" class="datos"/>
+  <text x="406" y="126" class="titulo" font-size="14">Recoleccion propia</text>
+  <text x="406" y="146" class="detalle">854 fotografias, 5 frutas</text>
+  <text x="406" y="164" class="detalle">Aporta la clase regular</text>
+  <text x="406" y="182" class="detalle">Plaza de mercado y hogares</text>
+
+  <path d="M 235 196 L 235 228" class="flechaD"/>
+  <path d="M 515 196 L 515 228" class="flechaD"/>
+
+  <!-- ================= FASE 1 ================= -->
+  <rect x="110" y="232" width="530" height="104" rx="8" class="fase"/>
+  <text x="126" y="256" class="num">1</text>
+  <text x="146" y="256" class="titulo">Comprension del negocio</text>
+  <text x="126" y="280" class="detalle">Clasificacion manual: lenta, subjetiva, inconsistente entre operarios.</text>
+  <text x="126" y="300" class="detalle">Criterio de exito: F1 macro &#8805; 0,80 y falsos "good" sobre "bad" &#8804; 2 %.</text>
+  <text x="126" y="320" class="detalle">Costos asimetricos: vender fruta mala cuesta 5x descartar fruta buena.</text>
+  <text x="670" y="276" class="nota">Salidas definidas:</text>
+  <text x="670" y="294" class="nota">calidad (3 clases)</text>
+  <text x="670" y="312" class="nota">tamano (3 clases)</text>
+
+  <path d="M 375 336 L 375 368" class="flecha"/>
+
+  <!-- ================= FASE 2 ================= -->
+  <rect x="110" y="372" width="530" height="124" rx="8" class="fase"/>
+  <text x="126" y="396" class="num">2</text>
+  <text x="146" y="396" class="titulo">Comprension de los datos</text>
+  <text x="126" y="420" class="detalle">Kaggle no tiene clase intermedia; granada concentra el 30 % del dataset.</text>
+  <text x="126" y="440" class="detalle">37 % de imagenes casi duplicadas (huella perceptual dHash).</text>
+  <text x="126" y="460" class="detalle">425 de 854 fotos propias en HEIC; 148 ya venian aumentadas.</text>
+  <text x="126" y="480" class="detalle">Cambio de dominio evidente entre las dos fuentes.</text>
+  <text x="670" y="424" class="nota">notebooks/</text>
+  <text x="670" y="442" class="nota">01_eda_preprocesamiento</text>
+  <text x="670" y="468" class="nota">data_processed/features/</text>
+  <text x="670" y="486" class="nota">meta.json</text>
+
+  <path d="M 375 496 L 375 528" class="flecha"/>
+
+  <!-- ================= FASE 3 ================= -->
+  <rect x="110" y="532" width="530" height="144" rx="8" class="fase"/>
+  <text x="126" y="556" class="num">3</text>
+  <text x="146" y="556" class="titulo">Preparacion de los datos</text>
+  <text x="126" y="580" class="detalle">Ingesta: HEIC a JPEG, correccion EXIF, escala a 1.024 px, filtro de resolucion.</text>
+  <text x="126" y="600" class="detalle">Segmentacion: saturacion + umbral de Otsu + morfologia.</text>
+  <text x="126" y="620" class="detalle">Caracteristicas: 93 dimensiones (color, forma, textura LBP, defectos).</text>
+  <text x="126" y="640" class="detalle">Particion 70/15/15 POR GRUPOS de casi duplicados, estratificada por</text>
+  <text x="126" y="660" class="detalle">fruta x calidad x fuente.</text>
+  <text x="670" y="584" class="nota">src/data/</text>
+  <text x="670" y="602" class="nota">src/features/</text>
+  <text x="670" y="628" class="nota">Evita la fuga de</text>
+  <text x="670" y="646" class="nota">informacion entre</text>
+  <text x="670" y="664" class="nota">particiones</text>
+
+  <path d="M 375 676 L 375 708" class="flecha"/>
+
+  <!-- ================= FASE 4 ================= -->
+  <rect x="110" y="712" width="530" height="144" rx="8" class="fase"/>
+  <text x="126" y="736" class="num">4</text>
+  <text x="146" y="736" class="titulo">Modelado</text>
+  <text x="126" y="760" class="detalle">Linea base: DummyClassifier (clase mayoritaria).</text>
+  <text x="126" y="780" class="detalle">ML clasico: regresion logistica, KNN, SVM-RBF, Random Forest, boosting.</text>
+  <text x="126" y="800" class="detalle">Deep learning: CNN propia de 3 bloques, 2 cabezas, 304.742 parametros.</text>
+  <text x="126" y="820" class="detalle">GridSearchCV con StratifiedGroupKFold de 5 pliegues; metrica F1 macro.</text>
+  <text x="126" y="840" class="detalle">Pesos de clase w = N / (K &#183; N_k) y suavizado de etiquetas.</text>
+  <text x="670" y="776" class="nota">src/models/</text>
+  <text x="670" y="794" class="nota">src/training/</text>
+  <text x="670" y="820" class="nota">Semilla fija 42</text>
+  <text x="670" y="838" class="nota">Entrenamiento en CPU</text>
+
+  <path d="M 375 856 L 375 888" class="flecha"/>
+
+  <!-- ================= FASE 5 ================= -->
+  <rect x="110" y="892" width="530" height="144" rx="8" class="fase"/>
+  <text x="126" y="916" class="num">5</text>
+  <text x="146" y="916" class="titulo">Evaluacion</text>
+  <text x="126" y="940" class="detalle">F1 macro, exactitud balanceada, kappa, MCC, ROC-AUC, MAE ordinal.</text>
+  <text x="126" y="960" class="detalle">Riesgo empirico con matriz de costos asimetricos.</text>
+  <text x="126" y="980" class="detalle">Generalizacion entre dominios: metricas por fuente y por fruta.</text>
+  <text x="126" y="1000" class="detalle">Analisis de errores sobre los fallos mas confiados del modelo.</text>
+  <text x="126" y="1020" class="detalle">Brecha entrenamiento menos prueba como evidencia de sobreajuste.</text>
+  <text x="670" y="952" class="nota">src/evaluation/</text>
+  <text x="670" y="970" class="nota">experiments/results/</text>
+  <text x="670" y="996" class="nota">El conjunto de prueba</text>
+  <text x="670" y="1014" class="nota">se mira una sola vez</text>
+
+  <path d="M 375 1036 L 375 1068" class="flecha"/>
+
+  <!-- ================= FASE 6 ================= -->
+  <rect x="110" y="1072" width="530" height="104" rx="8" class="fase"/>
+  <text x="126" y="1096" class="num">6</text>
+  <text x="146" y="1096" class="titulo">Despliegue</text>
+  <text x="126" y="1120" class="detalle">Interfaz Streamlit: carga de imagen o captura con camara.</text>
+  <text x="126" y="1140" class="detalle">Muestra clase, confianza y mascara segmentada; el operario puede anular.</text>
+  <text x="126" y="1160" class="detalle">Mismo preprocesamiento que en entrenamiento (evita training-serving skew).</text>
+  <text x="670" y="1124" class="nota">src/deployment/</text>
+  <text x="670" y="1150" class="nota">Sistema de asistencia,</text>
+  <text x="670" y="1168" class="nota">no de decision</text>
+
+  <!-- ================= RETROALIMENTACION ================= -->
+  <!-- A: evaluacion -> preparacion -->
+  <path d="M 106 950 C 60 950, 60 596, 102 596" class="flechaR"/>
+  <circle cx="62" cy="773" r="13" fill="#fffaf0" stroke="#9b2c2c" stroke-width="1.5"/>
+  <text x="57" y="778" class="retroId">A</text>
+
+  <!-- B: evaluacion -> modelado -->
+  <path d="M 106 1010 C 24 1010, 24 800, 102 800" class="flechaR"/>
+  <circle cx="26" cy="905" r="13" fill="#fffaf0" stroke="#9b2c2c" stroke-width="1.5"/>
+  <text x="21" y="910" class="retroId">B</text>
+
+  <!-- C: comprension de datos -> recoleccion -->
+  <path d="M 646 420 C 840 420, 862 150, 646 150" class="flechaR"/>
+  <circle cx="858" cy="285" r="13" fill="#fffaf0" stroke="#9b2c2c" stroke-width="1.5"/>
+  <text x="853" y="290" class="retroId">C</text>
+
+  <!-- D: despliegue -> negocio -->
+  <path d="M 646 1130 C 940 1130, 962 300, 646 300" class="flechaR"/>
+  <circle cx="955" cy="715" r="13" fill="#fffaf0" stroke="#9b2c2c" stroke-width="1.5"/>
+  <text x="950" y="720" class="retroId">D</text>
+
+  <!-- ================= LEYENDA ================= -->
+  <rect x="110" y="1196" width="810" height="112" rx="8" class="leyenda"/>
+  <text x="126" y="1218" class="titulo" font-size="14">Bucles de retroalimentacion ejecutados en este proyecto</text>
+  <text x="126" y="1240" class="retro"><tspan class="retroId">A</tspan>  Evaluacion a Preparacion: se detecto 37 % de casi duplicados, se rehizo la particion agrupando por fruta.</text>
+  <text x="126" y="1260" class="retro"><tspan class="retroId">B</tspan>  Evaluacion a Modelado: F1 = 1,000 en tamano revelo circularidad (la etiqueta se deriva de una caracteristica de entrada).</text>
+  <text x="126" y="1280" class="retro"><tspan class="retroId">C</tspan>  Comprension de datos a Recoleccion: el dataset publico carece de clase intermedia, el grupo fotografio fruta regular.</text>
+  <text x="126" y="1300" class="retro"><tspan class="retroId">D</tspan>  Despliegue a Negocio: el monitoreo en bodega obliga a revisar los criterios de exito (bucle previsto, aun no ejecutado).</text>
+</svg>

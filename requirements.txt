@@ -1,28 +1,37 @@
-# Visualización y Exploración (EDA)
+# ============================================================
+# Dependencias del proyecto
+# Instalación:  pip install -r requirements.txt
+# ============================================================
+
+# --- Núcleo numérico y datos ---
 numpy
 pandas
+joblib
+
+# --- Visualización y exploración (EDA, figuras del informe) ---
 matplotlib
 seaborn
-pillow
 
-# Procesamiento de Imágenes y Visión por Computadora
+# --- Procesamiento de imágenes y visión por computadora ---
 opencv-python
+Pillow>=11,<13
+pillow-heif          # lectura de HEIC: 425 de las fotografías propias vienen en ese formato
 
-# Modelos de Machine Learning Tradicionales (KNN, SVM, Random Forest, XGBoost)
+# --- Machine learning clásico ---
 scikit-learn
-xgboost
+xgboost              # opcional: si no está, el catálogo usa HistGradientBoosting
 
-# Redes Neuronales y Deep Learning (CNN)
+# --- Deep learning ---
 torch
 torchvision
 
-# Interfaz Gráfica de Despliegue (GUI)
+# --- Segmentación por red neuronal (fotografías con fondo complejo) ---
+rembg[cpu]
+
+# --- Interfaz gráfica de despliegue ---
 streamlit
 
-# Pruebas y Utilidades
+# --- Pruebas y utilidades ---
 pytest
 jupyter
-
-
-rembg[cpu]
-Pillow>=11,<13
+tabulate             # requerido por pandas.DataFrame.to_markdown en el informe consolidado
