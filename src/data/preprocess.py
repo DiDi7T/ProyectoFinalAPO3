@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from src.data.build_dataset import PROJECT_ROOT, get_fruit_mask_and_size
+from src.data.build_dataset import PROJECT_ROOT, get_fruit_mask_and_size, read_image
 
 QUALITY_TO_IDX = {"good": 0, "regular": 1, "bad": 2}
 IDX_TO_QUALITY = {v: k for k, v in QUALITY_TO_IDX.items()}
@@ -135,7 +135,7 @@ def prepare_ml_split(
 
     for _, row in df.iterrows():
         img_path = PROJECT_ROOT / row["filepath"]
-        img = cv2.imread(str(img_path))
+        img = read_image(img_path)
         if img is None:
             continue
 
@@ -152,7 +152,7 @@ def prepare_ml_split(
                 sampled = subset.sample(n=needed, replace=True, random_state=random_state)
                 for _, row in sampled.iterrows():
                     img_path = PROJECT_ROOT / row["filepath"]
-                    img = cv2.imread(str(img_path))
+                    img = read_image(img_path)
                     if img is None:
                         continue
                     aug_img = augment_image_bgr(img, rng)
@@ -180,7 +180,7 @@ def prepare_cnn_split(
 
     for _, row in df.iterrows():
         img_path = PROJECT_ROOT / row["filepath"]
-        img = cv2.imread(str(img_path))
+        img = read_image(img_path)
         if img is None:
             continue
 
@@ -197,7 +197,7 @@ def prepare_cnn_split(
                 sampled = subset.sample(n=needed, replace=True, random_state=random_state)
                 for _, row in sampled.iterrows():
                     img_path = PROJECT_ROOT / row["filepath"]
-                    img = cv2.imread(str(img_path))
+                    img = read_image(img_path)
                     if img is None:
                         continue
                     aug_img = augment_image_bgr(img, rng)
@@ -704,4 +704,3 @@ def prepare_cnn_split_rembg(
         np.array(y_quality, dtype=np.int64),
         np.array(y_size, dtype=np.int64)
     )
-

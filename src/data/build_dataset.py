@@ -1,14 +1,22 @@
+from concurrent.futures import ThreadPoolExecutor
+import os
 from pathlib import Path
 import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
 
 # Rutas base relativas a la raíz del proyecto (ProyectoFinalAPO3)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_RAW = PROJECT_ROOT / "data_raw"
 DATA_PROCESSED = PROJECT_ROOT / "data_processed"
 
-VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".heic", ".heif"}
+ANALYSIS_MAX_DIMENSION = 768
+SCAN_WORKERS = min(8, os.cpu_count() or 1)
+
+register_heif_opener()
 
 # Mapeo de normalización para nombres de carpetas
 FRUIT_ALIASES = {
@@ -36,6 +44,56 @@ def normalize_fruit_name(folder_name: str) -> str | None:
         if alias in clean:
             return standard
     return None
+
+
+def read_image(
+    image_path: Path,
+    reduced_jpeg: bool = True,
+) -> np.ndarray | None:
+    """Lee HEIF con Pillow y reduce la decodificación JPEG para acelerar el escaneo."""
+    if image_path.suffix.lower() in {".heic", ".heif"}:
+        with Image.open(image_path) as image:
+            image = ImageOps.exif_transpose(image).convert("RGB")
+            return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
+    if reduced_jpeg and image_path.suffix.lower() in {".jpg", ".jpeg"}:
+        return cv2.imread(str(image_path), cv2.IMREAD_REDUCED_COLOR_4)
+    return cv2.imread(str(image_path))
+
+
+def resize_for_analysis(image_bgr: np.ndarray) -> np.ndarray:
+    """Reduce imágenes grandes para acelerar el cálculo de máscaras y tamaño."""
+    height, width = image_bgr.shape[:2]
+    largest_dimension = max(height, width)
+    if largest_dimension <= ANALYSIS_MAX_DIMENSION:
+        return image_bgr
+
+    scale = ANALYSIS_MAX_DIMENSION / largest_dimension
+    target_size = (
+        max(1, round(width * scale)),
+        max(1, round(height * scale)),
+    )
+    return cv2.resize(image_bgr, target_size, interpolation=cv2.INTER_AREA)
+
+
+def _process_image_candidate(
+    candidate: tuple[Path, str, str, str],
+) -> dict | None:
+    image_path, source_name, fruit_label, quality_label = candidate
+    image = read_image(image_path)
+    if image is None:
+        print(f"[AVISO] Imagen corrupta o ilegible: {image_path}")
+        return None
+
+    image = resize_for_analysis(image)
+    _, rel_diam, size_label = get_fruit_mask_and_size(image)
+    return {
+        "filepath": image_path.relative_to(PROJECT_ROOT).as_posix(),
+        "source": source_name,
+        "fruit": fruit_label,
+        "quality": quality_label,
+        "size_label": size_label,
+        "relative_diameter": rel_diam,
+    }
 
 
 def get_fruit_mask_and_size(image_bgr: np.ndarray) -> tuple[np.ndarray, float, str]:
@@ -111,11 +169,11 @@ def get_fruit_mask_and_size(image_bgr: np.ndarray) -> tuple[np.ndarray, float, s
 
 def scan_source(base_dir: Path, source_name: str) -> list[dict]:
     """Recorre una fuente de datos (kaggle o recolectado) y extrae metadatos válidos."""
-    records = []
     if not base_dir.exists():
         print(f"[AVISO] No se encontró el directorio: {base_dir}")
-        return records
+        return []
 
+    candidates = []
     for quality_dir in sorted(base_dir.iterdir()):
         if not quality_dir.is_dir():
             continue
@@ -141,27 +199,16 @@ def scan_source(base_dir: Path, source_name: str) -> list[dict]:
             for img_path in sorted(fruit_dir.rglob("*")):
                 if img_path.suffix.lower() not in VALID_EXTENSIONS:
                     continue
-
-                img = cv2.imread(str(img_path))
-                if img is None:
-                    print(f"[AVISO] Imagen corrupta o ilegible: {img_path}")
-                    continue
-
-                _, rel_diam, size_label = get_fruit_mask_and_size(img)
-                rel_path = img_path.relative_to(PROJECT_ROOT).as_posix()
-
-                records.append(
-                    {
-                        "filepath": rel_path,
-                        "source": source_name,
-                        "fruit": fruit_label,
-                        "quality": quality_label,
-                        "size_label": size_label,
-                        "relative_diameter": rel_diam,
-                    }
+                candidates.append(
+                    (img_path, source_name, fruit_label, quality_label)
                 )
 
-    return records
+    with ThreadPoolExecutor(max_workers=SCAN_WORKERS) as executor:
+        return [
+            record
+            for record in executor.map(_process_image_candidate, candidates)
+            if record is not None
+        ]
 
 
 def build_dataset() -> pd.DataFrame:

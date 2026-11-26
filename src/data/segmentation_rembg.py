@@ -18,6 +18,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from src.data.build_dataset import read_image
+
 
 # ============================================================
 # 1. CONFIGURACIÓN
@@ -244,8 +246,9 @@ def procesar_dataset(limite=None):
                 carpeta_origen
             )
 
-            imagen = cv2.imread(
-                str(ruta_original)
+            imagen = read_image(
+                ruta_original,
+                reduced_jpeg=False
             )
 
             if imagen is None:
