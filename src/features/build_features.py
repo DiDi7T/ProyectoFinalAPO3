@@ -470,29 +470,32 @@ def construir(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--features",
-        choices=("enriched", "baseline"),
-        default="enriched",
-        help="Extractor a usar: 'enriched' (93 dim, este proyecto) o 'baseline' (1028 dim)",
-    )
-    parser.add_argument("--no-cnn", action="store_true", help="No guardar los tensores de la CNN")
-    parser.add_argument("--limit", type=int, default=None, help="Procesar solo N imagenes (pruebas)")
-    parser.add_argument(
-        "--max-kaggle",
-        type=int,
-        default=0,
-        help="Maximo de imagenes de Kaggle por fruta x calidad (0 = sin limite)",
-    )
-    args = parser.parse_args()
+    from src.utils.registro import registrar_ejecucion
 
-    construir(
-        tipo_features=args.features,
-        con_cnn=not args.no_cnn,
-        limite=args.limit,
-        max_kaggle=args.max_kaggle,
-    )
+    with registrar_ejecucion("build_features"):
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument(
+            "--features",
+            choices=("enriched", "baseline"),
+            default="enriched",
+            help="Extractor a usar: 'enriched' (93 dim, este proyecto) o 'baseline' (1028 dim)",
+        )
+        parser.add_argument("--no-cnn", action="store_true", help="No guardar los tensores de la CNN")
+        parser.add_argument("--limit", type=int, default=None, help="Procesar solo N imagenes (pruebas)")
+        parser.add_argument(
+            "--max-kaggle",
+            type=int,
+            default=0,
+            help="Maximo de imagenes de Kaggle por fruta x calidad (0 = sin limite)",
+        )
+        args = parser.parse_args()
+
+        construir(
+            tipo_features=args.features,
+            con_cnn=not args.no_cnn,
+            limite=args.limit,
+            max_kaggle=args.max_kaggle,
+        )
 
 
 if __name__ == "__main__":

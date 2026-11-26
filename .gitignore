@@ -16,10 +16,21 @@ data_processed/
 *.tar.gz
 
 # Modelos guardados y logs
+# Regla general: los artefactos binarios y los logs NO se versionan, porque se
+# regeneran con los comandos del README y ensucian el historial.
 experiments/checkpoints/*
 !experiments/checkpoints/.gitkeep
 experiments/logs/*
 !experiments/logs/.gitkeep
+
+# Excepcion: los modelos FINALES si se versionan, para que quien clone el
+# repositorio pueda ejecutar la interfaz de despliegue sin reentrenar.
+!experiments/checkpoints/mejor_classic_quality.joblib
+!experiments/checkpoints/mejor_classic_size.joblib
+!experiments/checkpoints/cnn_mejor.pt
+
+# experiments/results/ SI se versiona por completo (metricas, tablas y figuras):
+# es la evidencia que respalda el informe y son archivos pequenos y legibles.
 
 # IDEs y editores
 .vscode/

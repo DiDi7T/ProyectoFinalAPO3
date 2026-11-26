@@ -105,6 +105,7 @@ def entrenar_modelo(
     y_train: np.ndarray,
     grupos_train: np.ndarray,
     n_pliegues: int = 5,
+    n_jobs: int = 2,
 ) -> dict:
     """Ajusta un modelo con GridSearchCV respetando los grupos de duplicados."""
     n_clases = len(np.unique(y_train))
@@ -118,7 +119,11 @@ def entrenar_modelo(
         rejilla,
         scoring="f1_macro",
         cv=cv,
-        n_jobs=-1,
+        # n_jobs moderado y pre_dispatch acotado: cada proceso recibe una copia
+        # de la matriz de caracteristicas, de modo que n_jobs=-1 en una maquina
+        # de 8 GB agota la memoria y el proceso muere sin traza.
+        n_jobs=n_jobs,
+        pre_dispatch="2*n_jobs",
         refit=True,
         return_train_score=True,
         error_score="raise",
@@ -173,6 +178,7 @@ def ejecutar_tarea(
     tipo_features: str = "enriched",
     fuente: str = "all",
     etiqueta: str = "",
+    n_jobs: int = 2,
 ) -> dict:
     """
     Entrena todo el catalogo para una tarea ('quality' o 'size') y escribe
@@ -233,7 +239,7 @@ def ejecutar_tarea(
     for nombre, (pipeline, rejilla) in zoo.items():
         print(f"\n--- {nombre} ({max(tamano_rejilla(rejilla), 1)} combinaciones) ---")
         ajuste = entrenar_modelo(
-            nombre, pipeline, rejilla, X[tr], y[tr], datos["grupo"][tr]
+            nombre, pipeline, rejilla, X[tr], y[tr], datos["grupo"][tr], n_jobs=n_jobs
         )
         estimador = ajuste.pop("estimador")
 
@@ -352,38 +358,48 @@ def ejecutar_tarea(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--task", choices=("quality", "size", "both"), default="quality")
-    parser.add_argument("--features", choices=("enriched", "baseline"), default="enriched")
-    parser.add_argument("--rapido", action="store_true", help="Rejillas reducidas")
-    parser.add_argument("--models", nargs="*", default=None, help="Subconjunto de modelos")
-    parser.add_argument(
-        "--source",
-        choices=("all", "kaggle", "recolectado"),
-        default="all",
-        help="Restringir el experimento a una fuente de datos",
-    )
-    parser.add_argument(
-        "--tag",
-        default="",
-        help="Sufijo para los archivos de salida, para no sobreescribir otro experimento",
-    )
-    args = parser.parse_args()
+    from src.utils.registro import registrar_ejecucion
 
-    set_global_seed()
-    datos = cargar_datos(args.features)
-
-    tareas = ("quality", "size") if args.task == "both" else (args.task,)
-    for tarea in tareas:
-        ejecutar_tarea(
-            tarea,
-            datos,
-            rapido=args.rapido,
-            modelos=args.models,
-            tipo_features=args.features,
-            fuente=args.source,
-            etiqueta=args.tag,
+    with registrar_ejecucion("train_classic"):
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--task", choices=("quality", "size", "both"), default="quality")
+        parser.add_argument("--features", choices=("enriched", "baseline"), default="enriched")
+        parser.add_argument("--rapido", action="store_true", help="Rejillas reducidas")
+        parser.add_argument("--models", nargs="*", default=None, help="Subconjunto de modelos")
+        parser.add_argument(
+            "--source",
+            choices=("all", "kaggle", "recolectado"),
+            default="all",
+            help="Restringir el experimento a una fuente de datos",
         )
+        parser.add_argument(
+            "--jobs",
+            type=int,
+            default=2,
+            help="Procesos paralelos de GridSearchCV (bajar si la memoria es escasa)",
+        )
+        parser.add_argument(
+            "--tag",
+            default="",
+            help="Sufijo para los archivos de salida, para no sobreescribir otro experimento",
+        )
+        args = parser.parse_args()
+
+        set_global_seed()
+        datos = cargar_datos(args.features)
+
+        tareas = ("quality", "size") if args.task == "both" else (args.task,)
+        for tarea in tareas:
+            ejecutar_tarea(
+                tarea,
+                datos,
+                rapido=args.rapido,
+                modelos=args.models,
+                tipo_features=args.features,
+                fuente=args.source,
+                etiqueta=args.tag,
+                n_jobs=args.jobs,
+            )
 
 
 if __name__ == "__main__":

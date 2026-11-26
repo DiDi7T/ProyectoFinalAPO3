@@ -379,12 +379,15 @@ def generar_informe(tareas: tuple[str, ...] = ("quality", "size")) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--task", choices=("quality", "size", "both"), default="both")
-    args = parser.parse_args()
+    from src.utils.registro import registrar_ejecucion
 
-    tareas = ("quality", "size") if args.task == "both" else (args.task,)
-    generar_informe(tareas)
+    with registrar_ejecucion("evaluate"):
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--task", choices=("quality", "size", "both"), default="both")
+        args = parser.parse_args()
+
+        tareas = ("quality", "size") if args.task == "both" else (args.task,)
+        generar_informe(tareas)
 
 
 if __name__ == "__main__":

@@ -333,29 +333,32 @@ def entrenar(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--epocas", type=int, default=30)
-    parser.add_argument("--lote", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--paciencia", type=int, default=8)
-    parser.add_argument("--lambda-tamano", type=float, default=0.5)
-    parser.add_argument(
-        "--aplicar-mascara",
-        action="store_true",
-        help="Ablacion: entrenar con la fruta aislada sobre fondo negro",
-    )
-    args = parser.parse_args()
+    from src.utils.registro import registrar_ejecucion
 
-    entrenar(
-        epocas=args.epocas,
-        lote=args.lote,
-        lr=args.lr,
-        dropout=args.dropout,
-        paciencia=args.paciencia,
-        aplicar_mascara=args.aplicar_mascara,
-        lambda_tamano=args.lambda_tamano,
-    )
+    with registrar_ejecucion("train_cnn"):
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--epocas", type=int, default=30)
+        parser.add_argument("--lote", type=int, default=32)
+        parser.add_argument("--lr", type=float, default=1e-3)
+        parser.add_argument("--dropout", type=float, default=0.3)
+        parser.add_argument("--paciencia", type=int, default=8)
+        parser.add_argument("--lambda-tamano", type=float, default=0.5)
+        parser.add_argument(
+            "--aplicar-mascara",
+            action="store_true",
+            help="Ablacion: entrenar con la fruta aislada sobre fondo negro",
+        )
+        args = parser.parse_args()
+
+        entrenar(
+            epocas=args.epocas,
+            lote=args.lote,
+            lr=args.lr,
+            dropout=args.dropout,
+            paciencia=args.paciencia,
+            aplicar_mascara=args.aplicar_mascara,
+            lambda_tamano=args.lambda_tamano,
+        )
 
 
 if __name__ == "__main__":

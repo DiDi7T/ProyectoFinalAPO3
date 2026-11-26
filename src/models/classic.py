@@ -124,7 +124,11 @@ def get_model_zoo(rapido: bool = False) -> ModelZoo:
                     "clf",
                     RandomForestClassifier(
                         class_weight="balanced_subsample",
-                        n_jobs=-1,
+                        # n_jobs=1 a proposito: la paralelizacion la maneja
+                        # GridSearchCV. Anidar n_jobs=-1 dentro de una busqueda
+                        # tambien paralela multiplica los procesos y agota la
+                        # memoria (el equipo de desarrollo tiene 8 GB).
+                        n_jobs=1,
                         random_state=RANDOM_STATE,
                     ),
                 )
@@ -168,7 +172,7 @@ def get_model_zoo(rapido: bool = False) -> ModelZoo:
                             tree_method="hist",
                             eval_metric="mlogloss",
                             random_state=RANDOM_STATE,
-                            n_jobs=-1,
+                            n_jobs=1,  # ver la nota de RandomForest
                         ),
                     )
                 ]
