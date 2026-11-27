@@ -93,6 +93,7 @@ def tabla_global(tarea: str) -> pd.DataFrame:
 
     informe_clasico = _leer_json(RESULTS / f"classic_{tarea}_metrics.json")
     if informe_clasico:
+        validacion = informe_clasico.get("metricas_validacion", {})
         for nombre, m in informe_clasico["metricas_prueba"].items():
             ajuste = informe_clasico.get("ajuste", {}).get(nombre, {})
             filas.append(
@@ -106,6 +107,7 @@ def tabla_global(tarea: str) -> pd.DataFrame:
                     "mcc": m.get("mcc"),
                     "roc_auc_ovr": m.get("roc_auc_ovr"),
                     "mae_ordinal": m.get("mae_ordinal"),
+                    "val_f1_macro": (validacion.get(nombre) or {}).get("f1_macro"),
                     "cv_f1_macro": ajuste.get("cv_f1_macro"),
                     "cv_f1_macro_train": ajuste.get("cv_f1_macro_train"),
                     "falsos_buenos": (m.get("costo") or {}).get("n_falsos_buenos"),
@@ -130,9 +132,16 @@ def tabla_global(tarea: str) -> pd.DataFrame:
                 "mcc": m.get("mcc"),
                 "roc_auc_ovr": m.get("roc_auc_ovr"),
                 "mae_ordinal": m.get("mae_ordinal"),
-                "cv_f1_macro": (hist.get("f1_quality_val") or [None])[pos]
+                # La CNN no pasa por validacion cruzada: su hiperparametrizacion
+                # se controla con la particion de validacion y parada temprana.
+                # Dejar su F1 de validacion en la columna 'cv_f1_macro' la haria
+                # comparable con el criterio de seleccion de los modelos
+                # clasicos, que es una media de 5 pliegues, y no lo es. Va en
+                # 'val_f1_macro', igual que la de los clasicos.
+                "val_f1_macro": (hist.get("f1_quality_val") or [None])[pos]
                 if tarea == "quality"
                 else None,
+                "cv_f1_macro": None,
                 "cv_f1_macro_train": (hist.get("f1_quality_train") or [None])[pos]
                 if tarea == "quality"
                 else None,

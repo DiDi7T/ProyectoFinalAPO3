@@ -133,11 +133,16 @@ Enlace del dataset público:
 | Fuente | `good` | `regular` | `bad` | Total |
 |---|---|---|---|---|
 | kaggle | 1.250 | 0 | 1.250 | 2.500 |
-| recolectado | ~402 | ~221 | ~233 | ~856 |
-| **Total** | **1.652** | **221** | **1.483** | **3.356** |
+| recolectado | 422 | 346 | 233 | 1.001 |
+| **Total** | **1.672** | **346** | **1.483** | **3.501** |
 
-*Los conteos exactos de la corrida vigente están en
-`data_processed/features/meta.json` y en
+Toda la clase `regular` proviene de las fotografías propias: Kaggle solo
+distingue fruta sana de fruta podrida. Esa asimetría es la raíz del confusor
+que se analiza en §2.4.
+
+*Estos son los conteos de la corrida vigente, reproducibles con
+`python -c "import pandas as pd; d=pd.read_csv('data_processed/features/index.csv'); print(pd.crosstab(d['source'], d['quality'], margins=True))"`.
+El resumen de la corrida está en `data_processed/features/meta.json` y en
 `experiments/results/informe_consolidado.md`.*
 
 ### 2.4 Confusor por condiciones de captura
