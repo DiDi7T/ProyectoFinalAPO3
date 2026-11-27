@@ -1,11 +1,11 @@
 # Análisis ético y de impactos
 
-> Sustenta los criterios 1 (*Identificación y análisis de dilemas éticos*) y 2
-> (*Análisis de impactos globales, sociales, ambientales y económicos*) de la
-> rúbrica. Entre los dos pesan una cuarta parte de la evaluación.
+> Analiza los dilemas éticos de construir y desplegar este sistema, y sus
+> impactos en cuatro dimensiones. Cada medida declarada es verificable en el
+> código del repositorio.
 >
 > Marco de referencia: *ACM Code of Ethics and Professional Conduct* (2018) y
-> *IEEE Code of Ethics*. Las citas entre corchetes remiten a los principios
+> *IEEE Code of Ethics*. Las referencias numéricas remiten a los principios
 > del código de la ACM.
 
 ---
@@ -19,16 +19,16 @@ Esta tabla no es genérica: cada fila corresponde a una situación concreta de
 |---|---|---|---|---|---|
 | 1 | **Privacidad de terceros** | Las 1.019 fotografías propias se tomaron en plazas de mercado, supermercados y hogares. Pueden contener manos, rostros al fondo, letreros de locales o identificadores del puesto | 1.6 Respetar la privacidad | Revisión automática con detector facial sobre las 1.019 imágenes: 39 marcadas, **0 rostros confirmados**. Las manos que sostienen la fruta no identifican a nadie. Queda pendiente la revisión de letreros | `src/data/revision_privacidad.py` |
 | 2 | **Consentimiento del comerciante** | Se fotografió mercancía ajena dentro de establecimientos, posiblemente sin pedir permiso | 1.6, 2.3 | Documentar en el informe si se pidió autorización. Si no, no publicar imágenes donde el puesto sea identificable | — |
-| 3 | **Sesgo de origen de los datos** | El 74 % de las imágenes viene de un dataset público capturado en otro país, con variedades, calibres y estándares de madurez distintos a los colombianos | 1.4 Ser justo y no discriminar | Medir explícitamente el desempeño por fuente (`kaggle` vs `recolectado`) en lugar de reportar un único número global | `src/evaluation/evaluate.py::analisis_por_fuente` |
-| 4 | **Desempeño desigual entre clases** | El recall de `regular` es 0,585 frente a 0,95 de `good` y `bad`. El sistema falla justo en la categoría que decide si una fruta se vende con descuento o se descarta | 1.4, 2.5 | Reportar siempre el recall por clase y nunca solo la exactitud. Ponderación de clases en el entrenamiento. Recolectar más imágenes de la clase débil | `experiments/results/classic_quality_metrics.json` |
+| 3 | **Sesgo de origen de los datos** | El 71,4 % de las imágenes viene de un dataset público capturado en otro país, con variedades, calibres y estándares de madurez distintos a los colombianos | 1.4 Ser justo y no discriminar | Medir explícitamente el desempeño por fuente (`kaggle` vs `recolectado`) en lugar de reportar un único número global | `src/evaluation/evaluate.py::analisis_por_fuente` |
+| 4 | **Desempeño desigual entre clases** | El recall de `regular` es 0,822 frente a 0,951 de `good` y 0,933 de `bad`. El sistema falla justo en la categoría que decide si una fruta se vende con descuento o se descarta | 1.4, 2.5 | Reportar siempre el recall por clase y nunca solo la exactitud. Ponderación de clases en el entrenamiento. Recolectar más imágenes de la clase débil | `experiments/results/classic_quality_metrics.json` |
 | 5 | **Asimetría de costos no declarada** | Un falso `good` manda fruta deteriorada al consumidor; un falso `bad` solo cuesta margen. Optimizar la exactitud trata ambos errores como equivalentes | 1.2 Evitar el daño | Matriz de costos explícita ($C_{bad \to good} = 5$) y reporte del riesgo empírico junto a las métricas estadísticas | `src/evaluation/metrics.py::costo_asimetrico` |
 | 6 | **Etiquetas subjetivas presentadas como objetivas** | `regular` no tiene definición física: es un acuerdo entre cuatro estudiantes. El modelo aprende ese criterio particular y lo presenta como una medición | 1.3 Ser honesto y confiable | Protocolo de anotación escrito y público, con criterios observables y porcentajes de superficie afectada. Medición del acuerdo entre anotadores ($\kappa$ de Cohen) | `docs/01_metodologia_crisp_dm.md` §3.2 |
 | 7 | **Riesgo de automatizar una decisión económica** | Si el sistema clasifica un lote como `bad`, alguien pierde dinero. El error del modelo tiene víctima concreta, normalmente el productor, que es el eslabón más débil | 1.2, 2.5 | El sistema se declara **de asistencia**, no de decisión. Debe mostrar la confianza y permitir que el operario anule la predicción. Toda predicción queda registrada y es auditable | Requisito de diseño de la GUI, `docs/01` §6.2 |
 | 8 | **Desplazamiento laboral** | La clasificación manual es empleo real, con frecuencia informal y de baja calificación | 1.1 Contribuir al bienestar | Plantear el sistema como apoyo que reduce la carga repetitiva, no como reemplazo. Discutirlo abiertamente en el informe en lugar de omitirlo | §2.1 de este documento |
 | 9 | **Uso indebido del sistema** | Un comprador grande podría usarlo para castigar sistemáticamente el precio al productor, amparándose en una supuesta objetividad técnica | 1.2, 2.5 | Documentar la incertidumbre del modelo. Recomendar que los umbrales de clasificación sean acordados entre las partes, no fijados unilateralmente | — |
-| 10 | **Propiedad y licencia de los datos** | Se usa un dataset público de Kaggle cuya licencia hay que respetar y citar | 1.5 Respetar el trabajo ajeno | Citar la fuente en el README y en el informe. **Pendiente: verificar y registrar la licencia exacta del dataset** | `README.md` |
-| 11 | **Transparencia sobre las limitaciones** | La estimación de tamaño no mide tamaño físico (es ambigua respecto a la distancia de la cámara), y los modelos clásicos alcanzan $F_1 = 1{,}000$ por circularidad del diseño | 1.3 | Declararlo explícitamente en el informe en vez de presentar el 1,000 como logro | `docs/02_formulacion_matematica.md` §5 |
-| 12 | **Reproducibilidad y honestidad en los resultados** | Con un 37 % de imágenes casi duplicadas, una partición aleatoria produce métricas infladas que parecerían excelentes | 1.3, 2.1 Alcanzar la máxima calidad | Partición por grupos de duplicados y publicación del código completo que la genera | `src/features/build_features.py` |
+| 10 | **Propiedad y licencia de los datos** | Se usa un dataset público de Kaggle cuya licencia hay que respetar y citar | 1.5 Respetar el trabajo ajeno | Citar la fuente en el README y en el informe. La licencia exacta no se ha verificado, y así se declara en §4.2 | `README.md` |
+| 11 | **Transparencia sobre las limitaciones** | La estimación de tamaño no mide tamaño físico (es ambigua respecto a la distancia de la cámara), y la etiqueta de tamaño se deriva de la misma geometría que el modelo usa como característica | 1.3 | Declararlo en el informe y mostrar que sobre fotografías propias el $F_1$ cae a 0,535, lo que acota hasta dónde el modelo solo relee su entrada | `docs/02_formulacion_matematica.md` §5 |
+| 12 | **Reproducibilidad y honestidad en los resultados** | Con un 49,8 % de imágenes con al menos una copia casi idéntica, una partición aleatoria produce métricas infladas que parecerían excelentes | 1.3, 2.1 Alcanzar la máxima calidad | Partición por grupos de duplicados y publicación del código completo que la genera | `src/features/build_features.py` |
 
 ### 1.1 Dos dilemas que seguimos teniendo abiertos
 
@@ -61,8 +61,8 @@ Esta tabla no es genérica: cada fila corresponde a una situación concreta de
   detiene si se eliminó la capacidad manual.
 - Brecha digital: quien no tenga celular con cámara decente queda fuera.
 - **Falsa autoridad.** El riesgo más sutil: una cifra en pantalla se percibe
-  como objetiva y cierra la discusión, aunque sea una predicción con un 8,5 %
-  de error y un recall de 0,585 en la clase intermedia.
+  como objetiva y cierra la discusión, aunque sea una predicción con un 6,9 %
+  de error global y un recall de 0,822 en la clase intermedia.
 
 **Mitigación:** sistema de asistencia con confianza visible y anulación
 manual; capacitación del operario en lugar de reemplazo; registro auditable de
@@ -129,7 +129,7 @@ informe.
 
 | Dimensión | Impacto positivo principal | Riesgo principal | Severidad | Mitigación | ¿Implementada? |
 |---|---|---|---|---|---|
-| Social | Criterio consistente y auditable | Falsa autoridad de la cifra | Alta | Mostrar confianza y permitir anulación | Diseño de la GUI, pendiente |
+| Social | Criterio consistente y auditable | Falsa autoridad de la cifra | Alta | Mostrar confianza y permitir anulación | Sí, en la interfaz |
 | Social | Menos carga repetitiva | Desplazamiento laboral | Media | Enfoque de asistencia, no reemplazo | Declarado |
 | Económico | Menos devoluciones y disputas | Sesgo sistemático contra el productor | Alta | Umbrales acordados y auditoría de error por clase | Métricas por clase, sí |
 | Económico | Costo de implementación bajo | Caída de desempeño en el dominio real | Alta | Evaluación por fuente antes de desplegar | Implementada |
@@ -155,24 +155,44 @@ Lo que un lector del informe puede comprobar en el repositorio:
    trivial la tarea de tamaño.
 6. El código que genera cada número es reproducible con semilla fija.
 
-## 4. Pendientes éticos antes de la entrega
+## 4. Verificaciones realizadas y limitaciones asumidas
 
-- [x] **Revisar las fotografías propias por rostros.** Hecho: el detector
-      facial YuNet recorrió las 1.019 fotografías
-      (`python -m src.data.revision_privacidad`). Marcó 39 imágenes y la
-      revisión humana confirmó que **ninguna contiene un rostro**: son falsos
-      positivos sobre manzanas con manchas, donde el patrón de dos motas
-      oscuras y una tercera debajo activa el detector, más una fotografía con
-      dedos en el encuadre. Informe en
-      `docs/anotacion/revision_privacidad.csv`.
-- [ ] Revisar a ojo letreros de establecimientos, documentos y etiquetas de
-      precio identificables; el detector automático no los cubre.
-- [ ] Documentar si se pidió autorización a los comerciantes.
-- [ ] Verificar y citar la licencia exacta del dataset de Kaggle.
-- [ ] Medir el $\kappa$ de Cohen entre dos anotadores sobre 100 imágenes
-      comunes y reportarlo.
-- [ ] Decidir y documentar las condiciones bajo las cuales se comparte el
-      dataset con los demás grupos del curso.
+### 4.1 Verificaciones realizadas
+
+**Revisión de privacidad.** El detector facial YuNet recorrió las 1.019
+fotografías propias (`python -m src.data.revision_privacidad`). Marcó 39
+imágenes y la revisión humana confirmó que **ninguna contiene un rostro**:
+son falsos positivos sobre manzanas con manchas, donde el patrón de dos motas
+oscuras y una tercera debajo activa el detector, más una fotografía con dedos
+en el encuadre. El informe queda en `docs/anotacion/revision_privacidad.csv`.
+
+**Acuerdo entre anotadores.** Dos integrantes etiquetaron por separado las
+mismas 100 fotografías, muestreadas de forma estratificada y sin ver la
+etiqueta vigente. El resultado depende de qué decisión se mida: $\kappa =
+0{,}470$ para las tres clases, $\kappa = 0{,}828$ para la decisión operativa
+entre vender y descartar, y $\kappa = 0{,}720$ ponderado cuadrático. Los 35
+desacuerdos se concentran 28 en la frontera entre `good` y `regular`, y
+ninguno confundió fruta sana con podrida. Detalle en `docs/01` §3.3.1.
+
+### 4.2 Limitaciones que asumimos de forma explícita
+
+No son tareas olvidadas: son límites de alcance que el lector debe conocer
+para juzgar hasta dónde llegan las garantías de este análisis.
+
+1. **La revisión de privacidad cubre rostros, no identificadores de
+   establecimiento.** El detector automático no busca letreros, documentos ni
+   etiquetas de precio. Por eso la posición del grupo es no publicar ninguna
+   imagen donde el puesto sea identificable, en lugar de afirmar que no las
+   hay.
+2. **No se pidió autorización formal a los comerciantes.** Se fotografió
+   mercancía ajena dentro de establecimientos. Es la razón de la restricción
+   anterior y debe decirse, no omitirse.
+3. **La licencia exacta del dataset de Kaggle está pendiente de verificar.**
+   Se cita la fuente, pero mientras no se registre la licencia no puede
+   afirmarse que el uso dado sea el permitido.
+4. **No se definieron las condiciones para compartir el dataset con los demás
+   grupos.** Hasta resolver el punto 1, la posición es no compartir ninguna
+   imagen sin revisión previa.
 
 ---
 
@@ -183,7 +203,10 @@ Lo que un lector del informe puede comprobar en el repositorio:
 - Institute of Electrical and Electronics Engineers, *IEEE Code of Ethics*.
   [En línea]. Disponible: https://www.ieee.org/about/corporate/governance/p7-8.html
 
-> **[CITAS PENDIENTES]** Añadir en formato IEEE: (a) una fuente sobre pérdidas
-> poscosecha de frutas en Colombia (FAO, DANE o DNP); (b) la norma técnica de
-> clasificación de calidad de frutas aplicable; (c) la licencia del dataset de
-> Kaggle. La rúbrica exige referencias IEEE de material efectivamente leído.
+Las afirmaciones de este documento sobre pérdidas poscosecha en Colombia y
+sobre estándares de calidad de fruta se apoyan en conocimiento general del
+contexto y no en fuentes consultadas, por lo que se presentan como
+motivación y no como dato verificado. Cerrar esa brecha exige una fuente
+sobre pérdidas poscosecha (FAO, DANE o DNP) y la norma técnica de
+clasificación aplicable, junto con la licencia del dataset de Kaggle
+mencionada en §4.2.
