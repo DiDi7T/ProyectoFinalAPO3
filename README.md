@@ -96,6 +96,18 @@ python -m src.training.train_cnn --epocas 30
 python -m src.evaluation.evaluate
 ```
 
+Abrir la interfaz gráfica (necesita los modelos en `experiments/checkpoints/`):
+
+```powershell
+streamlit run src/deployment/app.py
+```
+
+O predecir una imagen desde consola:
+
+```powershell
+python -m src.deployment.predict ruta/a/foto.jpg --modelo cnn
+```
+
 Los resultados quedan en `experiments/results/` (métricas en JSON y CSV,
 figuras en SVG y PNG) y los modelos entrenados en `experiments/checkpoints/`.
 
@@ -108,7 +120,7 @@ src/
   models/      catálogo de modelos clásicos y arquitectura de la CNN
   training/    entrenamiento y ajuste de hiperparámetros
   evaluation/  métricas, figuras e informe consolidado
-  deployment/  interfaz gráfica e inferencia (pendiente)
+  deployment/  inferencia (predict.py) e interfaz gráfica (app.py)
 docs/          metodología, formulación matemática, ética y reparto del equipo
 notebooks/     análisis exploratorio
 experiments/   modelos entrenados, logs y resultados

@@ -23,7 +23,7 @@
 | CNN propia multitarea | Hecho | `src/models/cnn.py`, `src/training/train_cnn.py` |
 | Métricas, figuras y evaluación consolidada | Hecho | `src/evaluation/` |
 | Metodología, formulación matemática y ética | Hecho | `docs/01`, `docs/02`, `docs/03`, `docs/figuras/` |
-| **Despliegue (GUI)** | **Pendiente** | `src/deployment/` (vacío) |
+| Despliegue (GUI) | Hecho, en EC2: ~1,4 s por imagen en CPU (t3.small), casi todo es rembg | `src/deployment/predict.py`, `src/deployment/app.py` |
 | **Anotación de la clase `regular`** | **Pendiente** | — |
 | **Informe final y video** | **Pendiente** | — |
 
