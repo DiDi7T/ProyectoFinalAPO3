@@ -1,6 +1,6 @@
 # Informe consolidado de resultados
 
-Generado automaticamente el 2026-11-26 17:34 por `python -m src.evaluation.evaluate`.
+Generado automaticamente el 2026-11-26 21:09 por `python -m src.evaluation.evaluate`.
 
 ## Conjunto de datos
 
@@ -47,9 +47,9 @@ Generado automaticamente el 2026-11-26 17:34 por `python -m src.evaluation.evalu
 
 | fuente      |   n |   accuracy |   balanced_accuracy |   f1_macro | clases_presentes   |
 |:------------|----:|-----------:|--------------------:|-----------:|:-------------------|
-| kaggle      | 341 |     0.9355 |              0.9349 |     0.6253 | good, regular, bad |
-| recolectado | 122 |     0.8443 |              0.8432 |     0.8423 | good, regular, bad |
-| TODAS       | 463 |     0.9114 |              0.8875 |     0.8854 | good, regular, bad |
+| kaggle      | 341 |     0.9501 |              0.9494 |     0.9499 | good, bad          |
+| recolectado | 122 |     0.877  |              0.8803 |     0.8762 | good, regular, bad |
+| TODAS       | 463 |     0.9309 |              0.902  |     0.9119 | good, regular, bad |
 
 La diferencia entre las filas `kaggle` y `recolectado` mide el cambio de dominio: las imagenes publicas estan tomadas en condiciones controladas, mientras que las propias tienen fondos, sombras e iluminacion reales.
 
@@ -57,11 +57,11 @@ La diferencia entre las filas `kaggle` y `recolectado` mide el cambio de dominio
 
 | fruta   |   n |   accuracy |   f1_macro |   errores |
 |:--------|----:|-----------:|-----------:|----------:|
-| lime    |  91 |     0.8571 |     0.659  |        13 |
-| apple   |  99 |     0.8889 |     0.8845 |        11 |
-| orange  |  92 |     0.913  |     0.9112 |         8 |
-| banana  |  88 |     0.9545 |     0.9382 |         4 |
+| lime    |  91 |     0.9121 |     0.6251 |         8 |
+| orange  |  92 |     0.9239 |     0.8984 |         7 |
+| apple   |  99 |     0.9192 |     0.9272 |         8 |
 | guava   |  93 |     0.9462 |     0.9388 |         5 |
+| banana  |  88 |     0.9545 |     0.9654 |         4 |
 
 ## Tarea: tamano
 
@@ -81,9 +81,9 @@ La diferencia entre las filas `kaggle` y `recolectado` mide el cambio de dominio
 
 | fuente      |   n |   accuracy |   balanced_accuracy |   f1_macro | clases_presentes         |
 |:------------|----:|-----------:|--------------------:|-----------:|:-------------------------|
-| kaggle      | 341 |     0.9971 |              0.994  |     0.9959 | pequeño, mediano, grande |
-| recolectado | 122 |     0.8197 |              0.5259 |     0.5311 | pequeño, mediano, grande |
-| TODAS       | 463 |     0.9503 |              0.9583 |     0.952  | pequeño, mediano, grande |
+| kaggle      | 341 |     0.9912 |              0.9935 |     0.9912 | pequeño, mediano, grande |
+| recolectado | 122 |     0.8197 |              0.5288 |     0.5349 | pequeño, mediano, grande |
+| TODAS       | 463 |     0.946  |              0.9549 |     0.9476 | pequeño, mediano, grande |
 
 La diferencia entre las filas `kaggle` y `recolectado` mide el cambio de dominio: las imagenes publicas estan tomadas en condiciones controladas, mientras que las propias tienen fondos, sombras e iluminacion reales.
 
@@ -91,10 +91,10 @@ La diferencia entre las filas `kaggle` y `recolectado` mide el cambio de dominio
 
 | fruta   |   n |   accuracy |   f1_macro |   errores |
 |:--------|----:|-----------:|-----------:|----------:|
-| lime    |  91 |     0.978  |     0.6558 |         2 |
-| apple   |  99 |     0.9192 |     0.8982 |         8 |
-| orange  |  92 |     0.9239 |     0.9152 |         7 |
+| lime    |  91 |     0.9451 |     0.6467 |         5 |
+| apple   |  99 |     0.9192 |     0.8955 |         8 |
 | banana  |  88 |     0.9318 |     0.9255 |         6 |
+| orange  |  92 |     0.9348 |     0.9272 |         6 |
 | guava   |  93 |     1      |     1      |         0 |
 
 ## Como leer estos numeros

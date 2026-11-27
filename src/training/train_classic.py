@@ -306,8 +306,36 @@ def ejecutar_tarea(
     tabla_val.to_csv(RESULTS / f"classic_{nombre_tarea}_val_leaderboard.csv", index=False)
     tabla_test.to_csv(RESULTS / f"classic_{nombre_tarea}_test_leaderboard.csv", index=False)
 
+    # ---------- seleccion del modelo ----------
+    # El criterio es la media de F1 macro de la validacion cruzada, NO el
+    # resultado sobre la particion de validacion.
+    #
+    # Motivo: la validacion cruzada promedia 5 pliegues sobre todo el conjunto
+    # de entrenamiento, mientras que la particion de validacion es una sola
+    # muestra. Medido en este proyecto, la desviacion entre pliegues llega a
+    # 0,048, muy por encima de la diferencia entre los modelos punteros
+    # (0,006): elegir por una sola particion equivale a elegir por ruido. De
+    # hecho los dos criterios discrepaban, y el modelo que ganaba en la
+    # particion de validacion era precisamente el de mayor varianza entre
+    # pliegues.
+    #
+    # Se imprimen los dos criterios para que la discrepancia quede a la vista
+    # y la decision sea auditable. El conjunto de prueba no interviene aqui.
     candidatos = [n for n in resultados_val if n != "dummy"]
-    mejor = max(candidatos, key=lambda n: resultados_val[n]["f1_macro"]) if candidatos else None
+    mejor = max(candidatos, key=lambda n: detalles[n]["cv_f1_macro"]) if candidatos else None
+
+    if candidatos:
+        mejor_por_val = max(candidatos, key=lambda n: resultados_val[n]["f1_macro"])
+        print(
+            f"\nCriterio de seleccion (CV F1 macro): {mejor} "
+            f"({detalles[mejor]['cv_f1_macro']:.4f} +/- {detalles[mejor]['cv_f1_macro_std']:.4f})"
+        )
+        if mejor_por_val != mejor:
+            print(
+                f"[NOTA] La particion de validacion habria elegido '{mejor_por_val}' "
+                f"({resultados_val[mejor_por_val]['f1_macro']:.4f}). Se conserva la "
+                f"seleccion por validacion cruzada, de menor varianza."
+            )
 
     if mejor:
         P.comparacion_modelos(

@@ -19,7 +19,7 @@
     "regular",
     "bad"
   ],
-  "modelo_seleccionado": "svm_rbf",
+  "modelo_seleccionado": "hgb",
   "ajuste": {
     "dummy": {
       "nombre": "dummy",
@@ -1004,5 +1004,7 @@
         "costo_falso_malo": 1.0
       }
     }
-  }
+  },
+  "criterio_seleccion": "media de F1 macro en validacion cruzada de 5 pliegues por grupos",
+  "modelo_que_elegiria_la_particion_de_validacion": "svm_rbf"
 }

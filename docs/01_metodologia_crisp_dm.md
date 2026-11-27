@@ -369,6 +369,15 @@ Para que la estimación de tamaño sea físicamente válida (ver
 - `GridSearchCV` con **`StratifiedGroupKFold` de 5 pliegues**, pasando los
   identificadores de grupo de casi duplicados.
 - Métrica de selección: $F_1$ **macro**, no exactitud.
+- **Criterio de selección: la media de $F_1$ macro de la validación cruzada**,
+  no el resultado sobre la partición de validación. La validación cruzada
+  promedia 5 pliegues sobre las 2.318 imágenes de entrenamiento; la partición
+  de validación es una sola muestra de 720. Medida aquí, la desviación entre
+  pliegues llega a 0,048, muy por encima de la diferencia entre los modelos
+  punteros (0,006), de modo que elegir por una sola partición equivale a
+  elegir por ruido. Los dos criterios de hecho discrepaban: la partición de
+  validación favorecía al modelo con mayor varianza entre pliegues. El código
+  imprime ambos para que la discrepancia quede documentada.
 - Se registran la media y la desviación de los pliegues, y el $F_1$ de
   entrenamiento, para poder reportar la **brecha de generalización**.
 - La CNN usa parada temprana sobre el $F_1$ macro de validación con paciencia 8.
@@ -477,6 +486,8 @@ Imagen (archivo o cámara)
 | 8 | Matriz de costos asimétricos | 5 | Vender fruta mala cuesta más que descartar buena |
 | 9 | CNN multitarea con $\lambda_s = 0{,}5$ | 4 | Las etiquetas de tamaño son menos confiables |
 | 10 | Declarar la circularidad de la tarea de tamaño | 5 | $F_1 = 1{,}000$ es un diagnóstico, no un logro |
+| 11 | Seleccionar por validación cruzada y no por la partición de validación | 4 | La diferencia entre modelos (0,006) es menor que la desviación entre pliegues (0,048) |
+| 12 | Modelo definitivo: Histogram Gradient Boosting para calidad y para tamaño | 4 | Mejor media de validación cruzada en ambas tareas, menor riesgo con costos asimétricos y 2,3 MB frente a los 9,2 MB del bosque |
 
 ---
 

@@ -19,7 +19,7 @@
     "mediano",
     "grande"
   ],
-  "modelo_seleccionado": "rf",
+  "modelo_seleccionado": "hgb",
   "ajuste": {
     "dummy": {
       "nombre": "dummy",
@@ -974,5 +974,7 @@
       "mae_ordinal": 0.056155507559395246,
       "roc_auc_ovr": 0.9894601395361852
     }
-  }
+  },
+  "criterio_seleccion": "media de F1 macro en validacion cruzada de 5 pliegues por grupos",
+  "modelo_que_elegiria_la_particion_de_validacion": "rf"
 }
