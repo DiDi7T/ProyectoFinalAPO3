@@ -14,12 +14,14 @@ sola fotografía de una fruta, predice su **categoría de calidad** y su
 
 ## Miembros
 
-| Nombre | GitHub | Bloque de trabajo |
+Proyecto desarrollado por cuatro estudiantes de Ingeniería de Sistemas.
+
+| Nombre | Autor en el historial | Bloque de trabajo |
 |---|---|---|
-| *(completar)* | *(completar)* | EDA y preprocesamiento |
-| *(completar)* | *(completar)* | Segmentación |
-| *(completar)* | *(completar)* | Modelado, evaluación y metodología |
-| *(completar)* | *(completar)* | Despliegue |
+| Anderson Romero | `Anderson` | EDA y preprocesamiento |
+| Diana Garzón Toro | `DiDi7T` | Segmentación y análisis exploratorio |
+| Juan José Reyes | `Juan José` | Modelado, evaluación y metodología |
+| Juan Rubio Arboleda | `Juan Rubio` | Despliegue e interfaz |
 
 ## Objetivo
 
@@ -30,7 +32,8 @@ producto, siguiendo la metodología CRISP-DM.
 
 ## Métodos
 
-- Segmentación por saturación con umbral de Otsu y morfología matemática
+- Segmentación por saturación con umbral de Otsu y morfología matemática,
+  y segmentación neural con rembg/U²-Net para las fotografías propias
 - Ingeniería de características interpretables (color, forma, textura LBP,
   indicadores de defecto)
 - Machine learning clásico: regresión logística, KNN, SVM-RBF, Random Forest,
@@ -48,7 +51,7 @@ pillow-heif · Matplotlib · Streamlit · pytest
 | Fuente | Imágenes | Clases de calidad |
 |---|---|---|
 | [Fruit Quality Classification (Kaggle)](https://www.kaggle.com/datasets/ryandpark/fruit-quality-classification) | 19.526 disponibles, muestra estratificada en uso | `good`, `bad` |
-| Recolección propia del grupo | 854 | `good`, `regular`, `bad` |
+| Recolección propia del grupo | 1.001 | `good`, `regular`, `bad` |
 
 Las imágenes **no se versionan en git** (ver `.gitignore`). Se reconstruyen
 desde los archivos originales con los comandos de la sección siguiente, de
@@ -108,9 +111,9 @@ src/
   models/      catálogo de modelos clásicos y arquitectura de la CNN
   training/    entrenamiento y ajuste de hiperparámetros
   evaluation/  métricas, figuras e informe consolidado
-  deployment/  interfaz gráfica e inferencia (pendiente)
-docs/          metodología, formulación matemática, ética y reparto del equipo
-notebooks/     análisis exploratorio
+  deployment/  interfaz Streamlit e inferencia (rama `feat/despliegue-gui`)
+docs/          metodología, formulación matemática y ética
+notebooks/     análisis exploratorio y preprocesamiento
 experiments/   modelos entrenados, logs y resultados
 tests/         pruebas automáticas
 ```
@@ -122,15 +125,15 @@ tests/         pruebas automáticas
 | [Metodología CRISP-DM](docs/01_metodologia_crisp_dm.md) | Las 6 fases instanciadas, decisiones y protocolo de anotación |
 | [Formulación matemática](docs/02_formulacion_matematica.md) | Planteamiento formal, ecuaciones de cada bloque y métricas |
 | [Ética e impactos](docs/03_etica_e_impactos.md) | Dilemas éticos y análisis de impactos |
-| [Reparto del equipo](docs/04_reparto_equipo.md) | Estado y tareas pendientes por persona |
 | [Diagrama de flujo](docs/figuras/crisp_dm_flujo.svg) | CRISP-DM adaptado, formato vectorial |
 | [Resultados consolidados](experiments/results/informe_consolidado.md) | Generado automáticamente por la evaluación |
 
 ## Decisiones metodológicas destacadas
 
-- **Partición por grupos de casi duplicados.** El 37 % de las imágenes tiene
-  copias casi idénticas. Con partición aleatoria, copias de la misma fruta
-  caen en entrenamiento y prueba a la vez y las métricas quedan infladas.
+- **Partición por grupos de casi duplicados.** El 49,8 % de las imágenes
+  tiene al menos una copia casi idéntica. Con partición aleatoria, copias de
+  la misma fruta caen en entrenamiento y prueba a la vez y las métricas
+  quedan infladas.
 - **F1 macro como métrica de selección**, no exactitud: la clase `regular` es
   minoritaria y es justamente la que importa detectar.
 - **Costos asimétricos.** Clasificar fruta mala como buena cuesta más que lo
