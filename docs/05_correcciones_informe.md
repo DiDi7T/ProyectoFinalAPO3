@@ -55,7 +55,7 @@ son **HistGradientBoosting**:
 Random Forest gana en prueba por 0,004, pero la prueba no selecciona. Si el
 informe presenta Random Forest, no describe el sistema que se entrega.
 
-**Cuidado con la figura `comparacion_size.png`.** Hasta el commit `3e0c1f1`
+**Cuidado con la figura `comparacion_size.png`.** Hasta el commit `7dc571b`
 graficaba el F1 de la *partición de validación*, donde rf obtiene 0,9550 y
 hgb 0,9541: la barra de rf salía más alta y contradecía al texto. Ya está
 corregida y ahora grafica el criterio de selección, la media de los cinco
