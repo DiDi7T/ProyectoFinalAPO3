@@ -123,7 +123,7 @@ src/
   models/      catálogo de modelos clásicos y arquitectura de la CNN
   training/    entrenamiento y ajuste de hiperparámetros
   evaluation/  métricas, figuras e informe consolidado
-  deployment/  inferencia (predict.py) e interfaz gráfica (app.py)
+  deployment/  inferencia (predict.py) e interfaz Streamlit (app.py)
 docs/          metodología, formulación matemática y ética
 notebooks/     análisis exploratorio y preprocesamiento
 experiments/   modelos entrenados, logs y resultados
