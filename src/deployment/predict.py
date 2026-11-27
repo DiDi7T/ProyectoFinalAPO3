@@ -39,10 +39,14 @@ from src.data.ingest_recolectado import normalizar_imagen
 from src.features.build_features import GRIS_RELLENO, a_cuadrado
 from src.features.extractors import extract_features
 from src.features.segmentacion import diametro_relativo
-from src.utils.config import CHECKPOINTS, CNN_IMAGE_SIZE, QUALITY_CLASSES, SIZE_CLASSES
+from src.utils.config import CHECKPOINTS, CNN_IMAGE_SIZE, FRUIT_CLASSES, QUALITY_CLASSES, SIZE_CLASSES
 
 RUTA_CLASICO_CALIDAD = CHECKPOINTS / "mejor_classic_quality.joblib"
 RUTA_CLASICO_TAMANO = CHECKPOINTS / "mejor_classic_size.joblib"
+# Opcional: identifica el tipo de fruta (python -m src.training.train_classic --task fruit).
+RUTA_CLASICO_FRUTA = CHECKPOINTS / "mejor_classic_fruit.joblib"
+# Por debajo de esta probabilidad no se nombra la fruta.
+UMBRAL_FRUTA = 0.50
 RUTA_CNN = CHECKPOINTS / "cnn_mejor.pt"
 
 # Por debajo de esta probabilidad la interfaz advierte que la prediccion no es
@@ -93,6 +97,16 @@ class Prediccion:
     tiempo_ms: float = 0.0
     # Motivo por el que la imagen no parece una fruta (None si es valida).
     rechazo: str | None = None
+    # Tipo de fruta y sus probabilidades (vacio si no hay modelo de fruta).
+    proba_fruta: dict[str, float] = field(default_factory=dict)
+
+    @property
+    def fruta(self) -> str | None:
+        """Fruta mas probable, o None si no hay modelo o no esta seguro."""
+        if not self.proba_fruta:
+            return None
+        fruta = max(self.proba_fruta, key=self.proba_fruta.get)
+        return fruta if self.proba_fruta[fruta] >= UMBRAL_FRUTA else None
 
     @property
     def confianza_calidad(self) -> float:
@@ -119,6 +133,8 @@ class Prediccion:
             "modelo": self.modelo,
             "metodo_mascara": self.metodo_mascara,
             "rechazo": self.rechazo,
+            "fruta": self.fruta,
+            "proba_fruta": {k: round(v, 4) for k, v in self.proba_fruta.items()},
             "tiempo_ms": round(self.tiempo_ms, 1),
         }
 
@@ -313,6 +329,7 @@ class Predictor:
         ruta_calidad: Path = RUTA_CLASICO_CALIDAD,
         ruta_tamano: Path = RUTA_CLASICO_TAMANO,
         usar_rembg: bool = True,
+        ruta_fruta: Path = RUTA_CLASICO_FRUTA,
     ) -> None:
         # Las fotos que sube un usuario se parecen a las fotos propias del
         # dataset (fondos reales, manos), y esas se segmentaron con rembg al
@@ -330,6 +347,14 @@ class Predictor:
 
             self.clasico_calidad = joblib.load(ruta_calidad)
             self.clasico_tamano = joblib.load(ruta_tamano)
+
+        # El modelo de fruta usa las mismas 93 caracteristicas y sirve con
+        # cualquiera de los dos modelos de calidad.
+        self.clasico_fruta = None
+        if Path(ruta_fruta).exists():
+            import joblib
+
+            self.clasico_fruta = joblib.load(ruta_fruta)
 
     def calentar(self) -> None:
         """
@@ -408,6 +433,13 @@ class Predictor:
         else:
             proba_q, proba_s = self._predecir_clasico(imagen, mascara)
 
+        proba_fruta: dict[str, float] = {}
+        if self.clasico_fruta is not None:
+            x = extract_features(imagen, mascara)[None, :]
+            proba_fruta = _vector_a_dict(
+                _proba_clasico(self.clasico_fruta, x, len(FRUIT_CLASSES)), FRUIT_CLASSES
+            )
+
         tiempo = (time.perf_counter() - inicio) * 1000
         return Prediccion(
             calidad=QUALITY_CLASSES[int(np.argmax(proba_q))],
@@ -420,6 +452,7 @@ class Predictor:
             metodo_mascara=metodo_mascara,
             tiempo_ms=tiempo,
             rechazo=validar_fruta(mascara, imagen),
+            proba_fruta=proba_fruta,
         )
 
     def _predecir_cnn(self, imagen: np.ndarray, mascara: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

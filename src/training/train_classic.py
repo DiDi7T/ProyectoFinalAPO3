@@ -20,6 +20,7 @@ Uso
 ---
     python -m src.training.train_classic --task quality
     python -m src.training.train_classic --task both --rapido
+    python -m src.training.train_classic --task fruit
     python -m src.training.train_classic --task quality --features baseline
 """
 
@@ -41,6 +42,7 @@ from src.models.classic import get_model_zoo, tamano_rejilla
 from src.utils.config import (
     CHECKPOINTS,
     FEATURES_DIR,
+    FRUIT_CLASSES,
     QUALITY_CLASSES,
     RANDOM_STATE,
     RESULTS,
@@ -73,6 +75,11 @@ def cargar_datos(tipo_features: str = "enriched") -> dict:
         "X": X,
         "y_quality": np.load(FEATURES_DIR / "y_quality.npy"),
         "y_size": np.load(FEATURES_DIR / "y_size.npy"),
+        "y_fruit": (
+            np.load(FEATURES_DIR / "y_fruit.npy")
+            if (FEATURES_DIR / "y_fruit.npy").exists()
+            else None
+        ),
         "grupo": np.load(FEATURES_DIR / "grupo.npy"),
         "split": split,
         "train": split == "train",
@@ -196,8 +203,14 @@ def ejecutar_tarea(
     ensure_dirs()
     FIGURAS.mkdir(parents=True, exist_ok=True)
 
-    y = datos["y_quality"] if tarea == "quality" else datos["y_size"]
-    nombres_clases = QUALITY_CLASSES if tarea == "quality" else SIZE_CLASSES
+    # 'fruit' identifica el tipo de fruta. No es una salida del enunciado, pero
+    # la interfaz la usa para decir "esta manzana tiene calidad ...".
+    if tarea == "fruit" and datos.get("y_fruit") is None:
+        raise FileNotFoundError(
+            "No existe y_fruit.npy. Ejecuta: python -m src.features.build_features"
+        )
+    y = {"quality": datos["y_quality"], "size": datos["y_size"], "fruit": datos.get("y_fruit")}[tarea]
+    nombres_clases = {"quality": QUALITY_CLASSES, "size": SIZE_CLASSES, "fruit": FRUIT_CLASSES}[tarea]
     es_ordinal = tarea == "size"
 
     tr, va, te = datos["train"], datos["val"], datos["test"]
@@ -362,7 +375,9 @@ def main() -> None:
 
     with registrar_ejecucion("train_classic"):
         parser = argparse.ArgumentParser(description=__doc__)
-        parser.add_argument("--task", choices=("quality", "size", "both"), default="quality")
+        parser.add_argument(
+            "--task", choices=("quality", "size", "fruit", "both", "all"), default="quality"
+        )
         parser.add_argument("--features", choices=("enriched", "baseline"), default="enriched")
         parser.add_argument("--rapido", action="store_true", help="Rejillas reducidas")
         parser.add_argument("--models", nargs="*", default=None, help="Subconjunto de modelos")
@@ -388,7 +403,9 @@ def main() -> None:
         set_global_seed()
         datos = cargar_datos(args.features)
 
-        tareas = ("quality", "size") if args.task == "both" else (args.task,)
+        tareas = {"both": ("quality", "size"), "all": ("quality", "size", "fruit")}.get(
+            args.task, (args.task,)
+        )
         for tarea in tareas:
             ejecutar_tarea(
                 tarea,

@@ -32,6 +32,14 @@ from src.utils.config import LOGS, QUALITY_CLASSES  # noqa: E402
 
 NOMBRE_CALIDAD = {"good": "Buena", "regular": "Regular", "bad": "Mala"}
 NOMBRE_TAMANO = {"pequeño": "Pequeño", "mediano": "Mediano", "grande": "Grande"}
+# Demostrativo y nombre de cada fruta, para la frase "Este banano tiene ...".
+FRASE_FRUTA = {
+    "apple": "Esta manzana",
+    "banana": "Este banano",
+    "guava": "Esta guayaba",
+    "lime": "Este limón",
+    "orange": "Esta naranja",
+}
 NOMBRE_MODELO = {"cnn": "CNN", "clasico": "Modelo clásico"}
 RUTA_CORRECCIONES = LOGS / "correcciones.csv"
 
@@ -126,6 +134,9 @@ if resultado.rechazo:
         "Tome la foto con una sola fruta centrada, completa y sobre un fondo liso."
     )
     st.stop()
+
+sujeto = FRASE_FRUTA.get(resultado.fruta, "Esta fruta")
+st.subheader(f"{sujeto} tiene calidad {NOMBRE_CALIDAD[resultado.calidad].lower()}")
 
 col_img, col_res = st.columns([3, 2])
 col_img.image(contorno_sobre_imagen(imagen, resultado.mascara), caption="Región analizada", width="stretch")

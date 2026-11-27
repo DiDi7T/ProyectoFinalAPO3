@@ -117,3 +117,22 @@ def test_validar_fruta_acepta_circulo_y_rechaza_formas_raras():
 def test_prediccion_de_fruta_no_se_rechaza(rutas):
     r = Predictor(*rutas, usar_rembg=False).predecir(imagen_sintetica(), "clasico")
     assert r.rechazo is None
+
+
+def test_fruta_se_identifica_con_modelo_de_fruta(rutas, tmp_path):
+    from sklearn.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(1)
+    X = rng.normal(size=(50, N_FEATURES))
+    modelo = LogisticRegression(max_iter=500).fit(X, rng.integers(0, 5, size=50))
+    joblib.dump(modelo, tmp_path / "f.joblib")
+
+    r = Predictor(*rutas, usar_rembg=False, ruta_fruta=tmp_path / "f.joblib").predecir(imagen_sintetica(), "clasico")
+    assert len(r.proba_fruta) == 5
+    assert sum(r.proba_fruta.values()) == pytest.approx(1.0)
+    assert r.fruta is None or r.fruta in r.proba_fruta
+
+
+def test_sin_modelo_de_fruta_no_se_nombra(rutas):
+    r = Predictor(*rutas, usar_rembg=False).predecir(imagen_sintetica(), "clasico")
+    assert r.fruta is None and r.proba_fruta == {}
