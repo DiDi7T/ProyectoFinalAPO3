@@ -55,6 +55,18 @@ son **HistGradientBoosting**:
 Random Forest gana en prueba por 0,004, pero la prueba no selecciona. Si el
 informe presenta Random Forest, no describe el sistema que se entrega.
 
+**Cuidado con la figura `comparacion_size.png`.** Hasta el commit `3e0c1f1`
+graficaba el F1 de la *partición de validación*, donde rf obtiene 0,9550 y
+hgb 0,9541: la barra de rf salía más alta y contradecía al texto. Ya está
+corregida y ahora grafica el criterio de selección, la media de los cinco
+pliegues, con la desviación entre pliegues como barra de error y el modelo
+elegido resaltado. **Si alguien tiene una copia anterior de esa imagen, hay
+que reemplazarla.**
+
+La versión corregida de `comparacion_quality.png` vale la pena en el
+informe por sí misma: las barras de error de knn, svm_rbf, rf y hgb se
+solapan visiblemente, que es exactamente el argumento de §1.4.
+
 ### 1.4 Confunde la validación cruzada con la partición de validación
 
 §IV.A y §V.A dicen que HistGradientBoosting «obtuvo el mayor F1 macro en

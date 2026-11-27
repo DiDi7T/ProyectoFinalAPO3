@@ -338,12 +338,14 @@ def ejecutar_tarea(
             )
 
     if mejor:
-        P.comparacion_modelos(
-            list(resultados_val.keys()),
-            [resultados_val[n]["f1_macro"] for n in resultados_val],
-            "F1 macro (validacion)",
+        # La figura comparativa grafica el criterio de seleccion (media de
+        # validacion cruzada con su desviacion entre pliegues), no el F1 de
+        # la particion de validacion: esta ultima elegiria otro modelo y la
+        # figura contradiria al texto.
+        P.comparacion_criterio_seleccion(
+            detalles,
             FIGURAS / f"comparacion_{nombre_tarea}",
-            referencia=resultados_val.get("dummy", {}).get("f1_macro"),
+            seleccionado=mejor,
         )
         estimador_mejor = joblib.load(CHECKPOINTS / f"classic_{nombre_tarea}_{mejor}.joblib")
         proba_test = _probabilidades(estimador_mejor, X[te])

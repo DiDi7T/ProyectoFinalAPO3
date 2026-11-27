@@ -109,6 +109,9 @@ def tabla_global(tarea: str) -> pd.DataFrame:
                     "mae_ordinal": m.get("mae_ordinal"),
                     "val_f1_macro": (validacion.get(nombre) or {}).get("f1_macro"),
                     "cv_f1_macro": ajuste.get("cv_f1_macro"),
+                    # La desviacion entre pliegues es lo que permite juzgar si
+                    # una diferencia entre modelos es real o es ruido.
+                    "cv_f1_macro_std": ajuste.get("cv_f1_macro_std"),
                     "cv_f1_macro_train": ajuste.get("cv_f1_macro_train"),
                     "falsos_buenos": (m.get("costo") or {}).get("n_falsos_buenos"),
                 }
@@ -352,7 +355,8 @@ def generar_informe(tareas: tuple[str, ...] = ("quality", "size")) -> str:
             ]
             por_fruta.to_csv(RESULTS / f"por_fruta_{tarea}.csv", index=False)
 
-        # Figura comparativa de todas las familias.
+        # Figura comparativa de todas las familias sobre el conjunto de
+        # prueba: es el resultado, no el criterio de seleccion.
         validos = global_df.dropna(subset=["f1_macro"])
         if len(validos):
             referencia = validos.loc[validos["modelo"] == "dummy", "f1_macro"]
@@ -362,6 +366,17 @@ def generar_informe(tareas: tuple[str, ...] = ("quality", "size")) -> str:
                 f"F1 macro - {titulo} (prueba)",
                 FIGURAS / f"consolidado_{tarea}",
                 referencia=float(referencia.iloc[0]) if len(referencia) else None,
+            )
+
+        # Figura del criterio de seleccion. Se rehace aqui, y no solo al
+        # entrenar, para que quede alineada con las metricas guardadas sin
+        # tener que repetir la busqueda de hiperparametros.
+        informe_clasico = _leer_json(RESULTS / f"classic_{tarea}_metrics.json")
+        if informe_clasico and informe_clasico.get("ajuste"):
+            P.comparacion_criterio_seleccion(
+                informe_clasico["ajuste"],
+                FIGURAS / f"comparacion_{tarea}",
+                seleccionado=informe_clasico.get("modelo_seleccionado"),
             )
 
     partes += [

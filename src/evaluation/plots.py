@@ -143,20 +143,72 @@ def comparacion_modelos(
     metrica: str,
     destino: Path,
     referencia: float | None = None,
+    errores: list[float] | None = None,
+    resaltar: str | None = None,
 ) -> Path:
-    """Barras con el desempeno de cada modelo y la linea base como referencia."""
-    fig, ax = plt.subplots(figsize=(1.2 + 0.9 * len(nombres), 3.8))
-    ax.bar(nombres, valores, color="#2b6cb0")
+    """
+    Barras con el desempeno de cada modelo y la linea base como referencia.
+
+    `errores` dibuja barras de error (una desviacion estandar). Cuando la
+    magnitud graficada es el criterio de seleccion, omitirlas es enganoso:
+    dos modelos pueden diferir en milesimas y tener desviaciones entre
+    pliegues diez veces mayores, de modo que el orden de las barras no
+    significa nada. `resaltar` colorea distinto el modelo seleccionado.
+    """
+    fig, ax = plt.subplots(figsize=(1.2 + 0.9 * len(nombres), 4.0))
+    colores = [
+        "#dd6b20" if resaltar is not None and n == resaltar else "#2b6cb0"
+        for n in nombres
+    ]
+    ax.bar(
+        nombres,
+        valores,
+        color=colores,
+        yerr=errores,
+        capsize=4,
+        ecolor="#2d3748",
+        error_kw={"lw": 1.2},
+    )
     if referencia is not None:
         ax.axhline(referencia, color="#c53030", ls="--", lw=1.4, label=f"Linea base = {referencia:.3f}")
-        ax.legend(fontsize=8)
-    ax.set_ylim(0, 1.02)
+        ax.legend(fontsize=8, loc="lower right")
+    ax.set_ylim(0, 1.08)
     ax.set_ylabel(metrica)
     ax.set_title(f"Comparacion de modelos ({metrica})")
     for i, v in enumerate(valores):
-        ax.text(i, v + 0.015, f"{v:.3f}", ha="center", fontsize=8)
+        alto = v + (errores[i] if errores is not None else 0.0)
+        ax.text(i, alto + 0.018, f"{v:.3f}", ha="center", fontsize=8)
     plt.xticks(rotation=20, ha="right")
     return _guardar(fig, destino)
+
+
+def comparacion_criterio_seleccion(
+    ajuste: dict,
+    destino: Path,
+    seleccionado: str | None = None,
+) -> Path:
+    """
+    Grafica la magnitud con la que de verdad se elige el modelo: la media de
+    F1 macro en validacion cruzada por grupos, con su desviacion entre
+    pliegues.
+
+    Graficar aqui el F1 de la particion de validacion seria incoherente con
+    la decision que documenta `docs/01` §4.2, y llevaria a un lector a
+    concluir que gana otro modelo.
+    """
+    nombres = [n for n in ajuste if ajuste[n].get("cv_f1_macro") is not None]
+    medias = [float(ajuste[n]["cv_f1_macro"]) for n in nombres]
+    desv = [float(ajuste[n].get("cv_f1_macro_std") or 0.0) for n in nombres]
+    referencia = (ajuste.get("dummy") or {}).get("cv_f1_macro")
+    return comparacion_modelos(
+        nombres,
+        medias,
+        "F1 macro (validacion cruzada, 5 pliegues)",
+        destino,
+        referencia=float(referencia) if referencia is not None else None,
+        errores=desv,
+        resaltar=seleccionado,
+    )
 
 
 def curvas_entrenamiento(historial: dict, titulo: str, destino: Path) -> Path:
