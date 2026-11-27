@@ -1,4 +1,0 @@
-fuente,n,accuracy,balanced_accuracy,f1_macro,clases_presentes
-kaggle,341,0.9530791788856305,0.9532631215469614,0.6372685185185185,"good, regular, bad"
-recolectado,99,0.9393939393939394,0.9361111111111112,0.938505537300718,"good, regular, bad"
-TODAS,440,0.95,0.9638644121616258,0.9458043803652192,"good, regular, bad"

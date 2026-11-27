@@ -1,4 +1,0 @@
-fuente,n,accuracy,balanced_accuracy,f1_macro,clases_presentes
-kaggle,341,1.0,1.0,1.0,"pequeño, mediano, grande"
-recolectado,99,1.0,1.0,1.0,"pequeño, mediano, grande"
-TODAS,440,1.0,1.0,1.0,"pequeño, mediano, grande"
