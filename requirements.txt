@@ -18,7 +18,7 @@ Pillow>=11
 pillow-heif          # lectura de HEIC: 425 de las fotografías propias vienen en ese formato
 
 # --- Machine learning clásico ---
-scikit-learn
+scikit-learn==1.9.0     # misma version con la que se guardaron los modelos .joblib
 xgboost              # opcional: si no está, el catálogo usa HistGradientBoosting
 
 # --- Deep learning ---
